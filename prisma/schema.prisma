@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  BUYER
+  ADMIN
+}
+
+enum DealStatus {
+  OPEN
+  UNLOCKED
+  FAILED
+  FULFILLED
+}
+
+enum ParticipationStatus {
+  RESERVED
+  COLLECTED
+  NO_SHOW
+  CANCELLED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  phone          String          @unique
+  passwordHash   String
+  role           Role            @default(BUYER)
+  noShowCount    Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  participations Participation[]
+  dealsCreated   Deal[]          @relation("AdminDeals")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String
+  unit        String   // e.g., "5 L can", "10 kg bag", "pack of 12"
+  category    String   // e.g., "Cooking Oil", "Flour & Grains", "Tea & Sugar"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deals       Deal[]
+}
+
+model Deal {
+  id             String          @id @default(cuid())
+  productId      String
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  status         DealStatus      @default(OPEN)
+  deadline       DateTime
+  maxPerUser     Int             @default(3)
+  pickupLocation String
+  pickupTime     String          // e.g. "Sunday 4:00 PM - 7:00 PM"
+  createdById    String
+  createdBy      User            @relation("AdminDeals", fields: [createdById], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  tiers          DealTier[]
+  participations Participation[]
+
+  @@index([status])
+  @@index([deadline])
+}
+
+model DealTier {
+  id                  String   @id @default(cuid())
+  dealId              String
+  deal                Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  minUnits            Int
+  pricePerUnit        Float    // PKR price buyers pay at this tier
+  supplierCostPerUnit Float    // PKR wholesale cost from supplier
+
+  createdAt           DateTime @default(now())
+
+  @@index([dealId])
+}
+
+model Participation {
+  id        String              @id @default(cuid())
+  dealId    String
+  deal      Deal                @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quantity  Int                 @default(1)
+  status    ParticipationStatus @default(RESERVED)
+  joinedAt  DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@unique([dealId, userId])
+  @@index([dealId])
+  @@index([userId])
+}
