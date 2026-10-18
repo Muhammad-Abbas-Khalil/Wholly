@@ -37,22 +37,16 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 sm:gap-8">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-emerald-700/20 group-hover:scale-105 transition-transform">
-                W
-              </div>
-              <div>
-                <span className="text-xl font-black tracking-tight text-gray-900 flex items-center gap-1.5">
-                  Wholly
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    PK
-                  </span>
-                </span>
-                <p className="text-[11px] font-medium text-emerald-700 leading-none">
-                  Buy together, pay wholesale
-                </p>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Wholly - Buy Together, Pay Wholesale"
+                className="h-10 sm:h-11 w-auto object-contain group-hover:scale-105 transition-transform"
+              />
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                PK
+              </span>
             </Link>
 
             {/* Desktop Navigation Links */}

@@ -74,9 +74,11 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md bg-white rounded-3xl border border-gray-200/90 shadow-xl p-8 space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-md shadow-emerald-700/20">
-          W
-        </div>
+        <img
+          src="/logo.png"
+          alt="Wholly Logo"
+          className="h-14 w-auto object-contain mx-auto mb-1"
+        />
         <h1 className="text-2xl font-black text-gray-900">Welcome to Wholly</h1>
         <p className="text-xs text-gray-500">
           Sign in with your phone number to join bulk staple orders.
