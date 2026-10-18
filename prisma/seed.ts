@@ -70,10 +70,10 @@ async function main() {
     data: {
       name: 'Dalda Pure Cooking Oil (5 Litre Tin)',
       description:
-        'Premium refined cooking oil enriched with Vitamins A & D. Ideal for everyday household cooking.',
+        'Premium refined cooking oil enriched with Vitamins A & D. 100% genuine sealed factory tin for healthy family cooking.',
       unit: '5 L tin',
       category: 'Cooking Oil',
-      imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/dalda-cooking-oil.jpg',
     },
   });
 
@@ -81,21 +81,21 @@ async function main() {
     data: {
       name: 'Guard Supreme Super Kernel Basmati Rice (10 kg)',
       description:
-        'Aged aromatic long-grain basmati rice. Non-sticky texture, exceptional aroma, and rich taste.',
+        'Aged aromatic long-grain basmati rice. Non-sticky texture, exceptional aroma, and rich taste directly from the rice mills of Punjab.',
       unit: '10 kg bag',
       category: 'Rice & Grains',
-      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/guard-basmati-rice.png',
     },
   });
 
   const tea = await prisma.product.create({
     data: {
-      name: 'Mezan Danedar Premium Black Tea (900g)',
+      name: 'Tapal Danedar Premium Black Tea (900g)',
       description:
-        'Strong, aromatic blend of high-grown Kenyan CTC tea leaves. Delivers rich color and bold Karak taste.',
+        "Pakistan's most loved tea blend made with high-grown Kenya CTC black tea leaves. Renowned for its rich aroma, bright golden-amber color, and the signature 'Har Mizaaj Ka Danedar' robust taste.",
       unit: '900g pack',
       category: 'Tea & Beverages',
-      imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/tapal-danedar-tea.jpg',
     },
   });
 
@@ -103,10 +103,10 @@ async function main() {
     data: {
       name: 'Super Fine Refined White Sugar (5 kg)',
       description:
-        'Triple-refined, sparkling white pure cane sugar. Essential pantry staple.',
+        'Triple-refined, sparkling white pure cane sugar sourced directly from regional sugar mills. Essential pantry staple.',
       unit: '5 kg bag',
       category: 'Sugar & Sweeteners',
-      imageUrl: 'https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/white-sugar.jpg',
     },
   });
 
@@ -117,7 +117,7 @@ async function main() {
         '100% whole wheat chakki atta stone-ground to perfection. Enriched with natural dietary fiber, iron, zinc, folic acid & Vitamin B12 for soft, healthy rotis.',
       unit: '10 kg bag',
       category: 'Flour & Grains',
-      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/sunridge-chakki-atta.jpg',
     },
   });
 
@@ -128,7 +128,7 @@ async function main() {
         'Premium UHT treated pure cow & buffalo milk (12 x 1L Tetra Pak carton). Rich in calcium, protein, and essential vitamins without preservatives.',
       unit: 'Carton (12 x 1L)',
       category: 'Dairy & Breakfast',
-      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80',
+      imageUrl: '/products/olpers-milk-carton.jpg',
     },
   });
 
