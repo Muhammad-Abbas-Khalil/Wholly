@@ -95,7 +95,8 @@ export async function POST(request: Request) {
       deadline,
       pickupLocation,
       pickupTime,
-      maxPerUser = 3,
+      maxPerUser = 50,
+      tokenPerUnit = 150,
       tiers,
     } = body;
 
@@ -109,7 +110,8 @@ export async function POST(request: Request) {
         deadline: new Date(deadline),
         pickupLocation,
         pickupTime,
-        maxPerUser: Number(maxPerUser) || 3,
+        maxPerUser: Number(maxPerUser) || 50,
+        tokenPerUnit: Number(tokenPerUnit) || 150,
         createdById: session.user.id,
         tiers: {
           create: tiers.map((t: { minUnits: number; pricePerUnit: number; supplierCostPerUnit: number }) => ({

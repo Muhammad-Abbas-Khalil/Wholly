@@ -29,6 +29,8 @@ export default function DealDetailPage() {
   const [deal, setDeal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+  const [paymentMethod, setPaymentMethod] = useState<'JAZZCASH' | 'EASYPAISA' | 'CASH_GUARANTEE'>('JAZZCASH');
+  const [walletAccount, setWalletAccount] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -96,7 +98,10 @@ export default function DealDetailPage() {
       const res = await fetch(`/api/deals/${dealId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: selectedQuantity }),
+        body: JSON.stringify({
+          quantity: selectedQuantity,
+          paymentMethod,
+        }),
       });
 
       const data = await res.json();
@@ -305,58 +310,193 @@ export default function DealDetailPage() {
               )}
 
               {isDealOpen && !isPastDeadline ? (
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <span className="text-xs font-bold text-gray-900 block">Select Units (Max {deal.maxPerUser})</span>
-                      <span className="text-[11px] text-slate-600 font-medium">
+                <div className="space-y-5">
+                  {/* Flexible Quantity Stepper & Quick Chips */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-900 block">
+                        Order Quantity ({deal.product.unit})
+                      </span>
+                      <span className="text-[11px] text-slate-600 font-semibold">
                         {isUserJoined
-                          ? `Currently holding ${deal.userParticipation.quantity} unit(s)`
-                          : 'Zero upfront payment • Pay cash at pickup'}
+                          ? `Currently reserved: ${deal.userParticipation.quantity} unit(s)`
+                          : 'Order any quantity without artificial limits'}
                       </span>
                     </div>
 
-                    {/* Quantity Selector: 1, 2, or 3 units */}
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3].map((qty) => (
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Stepper with +/- */}
+                      <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white shadow-xs">
                         <button
-                          key={qty}
                           type="button"
-                          onClick={() => setSelectedQuantity(qty)}
-                          className={`w-10 h-10 rounded-xl font-black text-sm transition-all ${
-                            selectedQuantity === qty
-                              ? 'bg-emerald-600 text-white shadow-xs scale-105'
-                              : 'bg-white text-slate-900 border border-slate-300 hover:border-slate-400'
-                          }`}
+                          onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                          className="px-3.5 py-2 text-slate-700 hover:bg-slate-100 font-black text-base border-r border-slate-200 transition-colors"
                         >
-                          {qty}
+                          -
                         </button>
-                      ))}
+                        <input
+                          type="number"
+                          min={1}
+                          max={deal.maxPerUser || 100}
+                          value={selectedQuantity}
+                          onChange={(e) => setSelectedQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-16 py-2 text-center text-slate-900 font-black text-sm outline-none bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedQuantity(selectedQuantity + 1)}
+                          className="px-3.5 py-2 text-slate-700 hover:bg-slate-100 font-black text-base border-l border-slate-200 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Quick preset chips */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {[1, 2, 5, 10, 20].map((qty) => (
+                          <button
+                            key={qty}
+                            type="button"
+                            onClick={() => setSelectedQuantity(qty)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              selectedQuantity === qty
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
+                            }`}
+                          >
+                            {qty} {qty === 1 ? 'unit' : 'units'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
+                  {/* Commitment & Anti-Spam Deposit Breakdown Card */}
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                      <span className="font-bold text-slate-700">Total Wholesale Value:</span>
+                      <span className="font-black text-slate-900">
+                        PKR {(deal.currentPrice * selectedQuantity).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                      <span className="font-bold text-amber-700 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Anti-Spam Booking Token (PKR {deal.tokenPerUnit || 150}/unit):
+                      </span>
+                      <span className="font-black text-amber-800">
+                        PKR {((deal.tokenPerUnit || 150) * selectedQuantity).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-0.5">
+                      <span className="font-bold text-emerald-800">
+                        Remaining Cash Due on Pickup:
+                      </span>
+                      <span className="font-black text-emerald-800 text-sm">
+                        PKR {Math.max(0, (deal.currentPrice * selectedQuantity) - ((deal.tokenPerUnit || 150) * selectedQuantity)).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Token Payment Method Options */}
+                    <div className="pt-2 border-t border-slate-100 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-700 block">
+                        Select Payment Method for Booking Token:
+                      </span>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('JAZZCASH')}
+                          className={`p-2 rounded-xl text-center font-bold border transition-all ${
+                            paymentMethod === 'JAZZCASH'
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-600/20'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          JazzCash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('EASYPAISA')}
+                          className={`p-2 rounded-xl text-center font-bold border transition-all ${
+                            paymentMethod === 'EASYPAISA'
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-600/20'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          Easypaisa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('CASH_GUARANTEE')}
+                          className={`p-2 rounded-xl text-center font-bold border transition-all ${
+                            paymentMethod === 'CASH_GUARANTEE'
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-600/20'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          Cash Token
+                        </button>
+                      </div>
+
+                      {paymentMethod !== 'CASH_GUARANTEE' && (
+                        <div className="pt-1">
+                          <input
+                            type="text"
+                            value={walletAccount}
+                            onChange={(e) => setWalletAccount(e.target.value)}
+                            placeholder={`Enter ${paymentMethod === 'JAZZCASH' ? 'JazzCash' : 'Easypaisa'} Mobile Number (e.g. 03001234567)`}
+                            className="w-full p-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Anti-cancellation Policy Notice */}
+                  <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
+                    <span className="font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                      Anti-Spam & Pool Protection Guarantee:
+                    </span>
+                    <p className="text-amber-800 leading-relaxed font-medium">
+                      The booking deposit guarantees your units with distributors and is credited towards your final cash payment at pickup. Once wholesale tiers are active, orders are locked and cannot be cancelled to ensure group prices are honored for all participants.
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3 pt-1">
                     <button
                       onClick={handleJoin}
                       disabled={isSubmitting}
                       className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 transition-all hover:scale-[1.01]"
                     >
                       {isSubmitting
-                        ? 'Saving...'
+                        ? 'Confirming...'
                         : isUserJoined
                         ? `Update to ${selectedQuantity} Unit(s)`
-                        : `Reserve ${selectedQuantity} Unit(s) (Cash on Pickup)`}
+                        : `Confirm & Reserve ${selectedQuantity} Unit(s)`}
                     </button>
 
                     {isUserJoined && (
-                      <button
-                        onClick={handleLeave}
-                        disabled={isSubmitting}
-                        className="py-3.5 px-4 rounded-2xl font-bold text-sm text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
-                        title="Cancel reservation"
-                      >
-                        Cancel
-                      </button>
+                      deal.unitsClaimed >= (deal.tiers[0]?.minUnits ?? 1) ? (
+                        <span
+                          className="py-3.5 px-4 rounded-2xl font-bold text-xs bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300"
+                          title="Cancellation is locked because group wholesale tier is unlocked."
+                        >
+                          🔒 Orders Locked
+                        </span>
+                      ) : (
+                        <button
+                          onClick={handleLeave}
+                          disabled={isSubmitting}
+                          className="py-3.5 px-4 rounded-2xl font-bold text-sm text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
+                          title="Cancel reservation"
+                        >
+                          Cancel
+                        </button>
+                      )
                     )}
                   </div>
                 </div>

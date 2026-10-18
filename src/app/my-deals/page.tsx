@@ -148,16 +148,21 @@ export default function MyDealsPage() {
                       Reserved: <strong className="text-gray-900 font-bold">{item.quantity} {deal.product.unit}</strong>
                     </span>
                     <span className="text-xs text-slate-600 font-medium">
-                      @ PKR {deal.unitPrice.toLocaleString()} / unit
+                      @ PKR {deal.unitPrice.toLocaleString()} / unit (Total: PKR {deal.totalCost.toLocaleString()})
                     </span>
+                    {item.depositPaid > 0 && (
+                      <span className="text-[11px] font-bold text-amber-700 block">
+                        Deposit Paid: PKR {item.depositPaid.toLocaleString()} ({item.paymentMethod})
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-right">
                     <span className="text-xs font-bold text-emerald-700 block flex items-center gap-1 justify-end">
-                      <Coins className="w-3.5 h-3.5 text-emerald-600" /> Cash on Pickup
+                      <Coins className="w-3.5 h-3.5 text-emerald-600" /> Cash Due at Pickup
                     </span>
                     <span className="text-xl font-black text-gray-900">
-                      PKR {deal.totalCost.toLocaleString()}
+                      PKR {item.balanceDue ? item.balanceDue.toLocaleString() : deal.totalCost.toLocaleString()}
                     </span>
                   </div>
 

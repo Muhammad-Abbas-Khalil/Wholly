@@ -58,7 +58,8 @@ model Deal {
   product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   status         DealStatus      @default(OPEN)
   deadline       DateTime
-  maxPerUser     Int             @default(3)
+  maxPerUser     Int             @default(50)
+  tokenPerUnit   Float           @default(150) // PKR commitment token per unit to prevent spam & no-shows
   pickupLocation String
   pickupTime     String          // e.g. "Sunday 4:00 PM - 7:00 PM"
   createdById    String
@@ -87,15 +88,17 @@ model DealTier {
 }
 
 model Participation {
-  id        String              @id @default(cuid())
-  dealId    String
-  deal      Deal                @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quantity  Int                 @default(1)
-  status    ParticipationStatus @default(RESERVED)
-  joinedAt  DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id            String              @id @default(cuid())
+  dealId        String
+  deal          Deal                @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quantity      Int                 @default(1)
+  depositPaid   Float               @default(0) // Token deposit paid (PKR)
+  paymentMethod String?             @default("JAZZCASH") // JAZZCASH, EASYPAISA, or CASH_GUARANTEE
+  status        ParticipationStatus @default(RESERVED)
+  joinedAt      DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@unique([dealId, userId])
   @@index([dealId])

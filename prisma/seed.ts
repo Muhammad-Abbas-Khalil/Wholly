@@ -125,7 +125,8 @@ async function main() {
       createdById: admin.id,
       status: DealStatus.OPEN,
       deadline: threeDaysLater,
-      maxPerUser: 3,
+      maxPerUser: 50,
+      tokenPerUnit: 150,
       pickupLocation: 'Community Center / Mosque Parking, Block D, Model Town, Lahore',
       pickupTime: 'Saturday 4:00 PM - 7:00 PM',
       tiers: {
@@ -156,7 +157,8 @@ async function main() {
       createdById: admin.id,
       status: DealStatus.OPEN,
       deadline: fiveDaysLater,
-      maxPerUser: 3,
+      maxPerUser: 50,
+      tokenPerUnit: 150,
       pickupLocation: 'Wholly Hub @ PSO Fuel Station, Main Boulevard, Gulberg III, Lahore',
       pickupTime: 'Sunday 11:00 AM - 3:00 PM',
       tiers: {
@@ -184,7 +186,8 @@ async function main() {
       createdById: admin.id,
       status: DealStatus.OPEN,
       deadline: oneWeekLater,
-      maxPerUser: 3,
+      maxPerUser: 50,
+      tokenPerUnit: 150,
       pickupLocation: 'Wholly Pickup Point, Street 5, F-7/2, Islamabad',
       pickupTime: 'Friday 3:00 PM - 6:00 PM',
       tiers: {
@@ -215,7 +218,8 @@ async function main() {
       createdById: admin.id,
       status: DealStatus.FULFILLED,
       deadline: pastDate,
-      maxPerUser: 3,
+      maxPerUser: 50,
+      tokenPerUnit: 150,
       pickupLocation: 'Wholly Hub @ Phase 4 Commercial, DHA, Lahore',
       pickupTime: 'Completed on Wednesday',
       tiers: {

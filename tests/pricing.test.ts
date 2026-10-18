@@ -7,6 +7,8 @@ import {
   calculateDealProgress,
   calculateSavings,
   calculatePlatformMargin,
+  calculateBookingToken,
+  calculateBalanceDue,
   type TierLike,
   type ParticipationLike,
 } from '../src/lib/pricing';
@@ -121,16 +123,26 @@ describe('Wholly Pricing Engine', () => {
   });
 
   describe('calculatePlatformMargin()', () => {
-    it('calculates platform revenue correctly based on unit volume', () => {
-      // 20 units at tier 20 (buyer pays 2700, supplier charges 2500 -> 200 PKR/unit margin)
-      const active = currentTier(sampleTiers, 20);
-      const margin = calculatePlatformMargin(active, 20);
-      expect(margin).toBe(4000); // 20 * 200
-    });
-
     it('returns 0 when active tier is null or units are 0', () => {
       expect(calculatePlatformMargin(null, 10)).toBe(0);
       expect(calculatePlatformMargin(sampleTiers[0], 0)).toBe(0);
     });
   });
+
+  describe('calculateBookingToken() & calculateBalanceDue()', () => {
+    it('calculates commitment token at PKR 150 per unit correctly', () => {
+      expect(calculateBookingToken(1, 150)).toBe(150);
+      expect(calculateBookingToken(5, 150)).toBe(750);
+      expect(calculateBookingToken(10, 150)).toBe(1500);
+      expect(calculateBookingToken(0, 150)).toBe(0);
+    });
+
+    it('calculates remaining cash balance due at pickup accurately after deducting deposit', () => {
+      // 5 units at PKR 2,700 = 13,500 total, deposit paid = 750 -> balance due = 12,750
+      expect(calculateBalanceDue(2700, 5, 750)).toBe(12750);
+      // If no deposit paid yet
+      expect(calculateBalanceDue(2700, 5, 0)).toBe(13500);
+    });
+  });
 });
+

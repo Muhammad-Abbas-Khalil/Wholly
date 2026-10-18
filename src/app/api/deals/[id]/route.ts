@@ -71,6 +71,7 @@ export async function GET(
         pickupLocation: deal.pickupLocation,
         pickupTime: deal.pickupTime,
         maxPerUser: deal.maxPerUser,
+        tokenPerUnit: deal.tokenPerUnit ?? 150,
         product: deal.product,
         tiers: deal.tiers,
         unitsClaimed: units,
@@ -92,6 +93,8 @@ export async function GET(
                 .map((p) => ({
                   id: p.id,
                   quantity: p.quantity,
+                  depositPaid: p.depositPaid,
+                  paymentMethod: p.paymentMethod,
                   joinedAt: p.joinedAt,
                   userName: p.user.name.split(' ')[0] + ' ' + (p.user.name.split(' ')[1]?.[0] || '') + '.',
                 })),
@@ -99,6 +102,8 @@ export async function GET(
           ? {
               id: userParticipation.id,
               quantity: userParticipation.quantity,
+              depositPaid: userParticipation.depositPaid,
+              paymentMethod: userParticipation.paymentMethod,
               status: userParticipation.status,
               joinedAt: userParticipation.joinedAt,
             }

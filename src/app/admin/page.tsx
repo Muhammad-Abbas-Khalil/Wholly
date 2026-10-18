@@ -33,7 +33,8 @@ export default function AdminDashboardPage() {
     deadline: '',
     pickupLocation: 'Wholly Hub @ Community Center, Block D, Model Town, Lahore',
     pickupTime: 'Saturday 4:00 PM - 7:00 PM',
-    maxPerUser: 3,
+    maxPerUser: 50,
+    tokenPerUnit: 150,
     tiers: [
       { minUnits: 1, pricePerUnit: 3000, supplierCostPerUnit: 2600 },
       { minUnits: 10, pricePerUnit: 2850, supplierCostPerUnit: 2550 },
@@ -399,6 +400,30 @@ export default function AdminDashboardPage() {
                   value={dealForm.pickupTime}
                   onChange={(e) => setDealForm({ ...dealForm, pickupTime: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">Max Units / Person</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={dealForm.maxPerUser}
+                  onChange={(e) => setDealForm({ ...dealForm, maxPerUser: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-amber-700 block mb-1">Anti-Spam Token / Unit (PKR)</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={dealForm.tokenPerUnit}
+                  onChange={(e) => setDealForm({ ...dealForm, tokenPerUnit: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-xl border border-amber-300 bg-white text-slate-900 font-bold"
                 />
               </div>
             </div>

@@ -36,10 +36,15 @@ export async function GET() {
       const basePrice = p.deal.tiers[0]?.pricePerUnit ?? 0;
       const unitPrice = activeTier ? activeTier.pricePerUnit : basePrice;
       const totalCost = unitPrice * p.quantity;
+      const depositPaid = p.depositPaid || 0;
+      const balanceDue = Math.max(0, totalCost - depositPaid);
 
       return {
         participationId: p.id,
         quantity: p.quantity,
+        depositPaid,
+        balanceDue,
+        paymentMethod: p.paymentMethod || 'JAZZCASH',
         status: p.status,
         joinedAt: p.joinedAt,
         deal: {
@@ -53,6 +58,7 @@ export async function GET() {
           activeTier,
           unitPrice,
           totalCost,
+          balanceDue,
         },
       };
     });

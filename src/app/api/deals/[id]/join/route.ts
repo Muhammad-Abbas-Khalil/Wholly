@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -14,9 +16,10 @@ export async function POST(
 
     const { id: dealId } = await params;
     const body = await request.json();
-    const quantity = Number(body.quantity);
+    const quantity = Math.max(1, Math.floor(Number(body.quantity) || 1));
+    const paymentMethod = body.paymentMethod || 'JAZZCASH';
 
-    // 1. Transaction to guarantee concurrency safety
+    // Transaction to guarantee concurrency safety
     const result = await prisma.$transaction(async (tx) => {
       const deal = await tx.deal.findUnique({
         where: { id: dealId },
@@ -37,9 +40,14 @@ export async function POST(
         throw new Error('The deadline for this deal has already passed');
       }
 
-      if (!quantity || quantity < 1 || quantity > deal.maxPerUser) {
-        throw new Error(`You can reserve between 1 and ${deal.maxPerUser} units`);
+      const limit = deal.maxPerUser || 100;
+      if (quantity > limit) {
+        throw new Error(`The maximum order for this pool is ${limit} units`);
       }
+
+      // Calculate commitment booking token to eliminate spam
+      const tokenRate = deal.tokenPerUnit ?? 150;
+      const depositPaid = Math.round(quantity * tokenRate);
 
       // Check existing participation
       const existing = await tx.participation.findUnique({
@@ -57,6 +65,8 @@ export async function POST(
           where: { id: existing.id },
           data: {
             quantity,
+            depositPaid,
+            paymentMethod,
             status: 'RESERVED',
           },
         });
@@ -66,6 +76,8 @@ export async function POST(
             dealId,
             userId: session.user.id,
             quantity,
+            depositPaid,
+            paymentMethod,
             status: 'RESERVED',
           },
         });
@@ -74,7 +86,11 @@ export async function POST(
       return { deal, participation };
     });
 
-    return NextResponse.json({ success: true, participation: result.participation });
+    return NextResponse.json({
+      success: true,
+      participation: result.participation,
+      depositPaid: result.participation.depositPaid,
+    });
   } catch (error: any) {
     console.error('Join deal error:', error);
     const message = error.message || 'Failed to join deal';
@@ -97,6 +113,10 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       const deal = await tx.deal.findUnique({
         where: { id: dealId },
+        include: {
+          tiers: { orderBy: { minUnits: 'asc' } },
+          participations: true,
+        },
       });
 
       if (!deal) {
@@ -122,6 +142,19 @@ export async function DELETE(
 
       if (!existing || existing.status === 'CANCELLED') {
         throw new Error('You have not joined this deal');
+      }
+
+      // Anti-Cancellation / Anti-Spam protection:
+      // If pool has active participants or unlocked wholesale rates, lock cancellation to prevent pool collapse!
+      const totalActiveUnits = deal.participations
+        .filter((p) => p.status !== 'CANCELLED')
+        .reduce((sum, p) => sum + p.quantity, 0);
+
+      const baseTier = deal.tiers[0];
+      if (baseTier && totalActiveUnits >= baseTier.minUnits) {
+        throw new Error(
+          'Orders are locked once group wholesale tiers are active to guarantee the discounted price for all neighbors. You must collect your reserved units at pickup.'
+        );
       }
 
       await tx.participation.update({

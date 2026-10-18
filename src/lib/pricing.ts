@@ -97,3 +97,24 @@ export function calculatePlatformMargin<T extends TierLike>(
   const perUnitProfit = activeTier.pricePerUnit - activeTier.supplierCostPerUnit;
   return Math.max(0, perUnitProfit * units);
 }
+
+/**
+ * Calculates the commitment booking token to prevent spam and order abandonment.
+ */
+export function calculateBookingToken(quantity: number, tokenPerUnit: number = 150): number {
+  if (quantity <= 0) return 0;
+  return Math.round(quantity * tokenPerUnit);
+}
+
+/**
+ * Calculates the remaining balance due in cash at pickup after deducting deposit.
+ */
+export function calculateBalanceDue(
+  unitPrice: number,
+  quantity: number,
+  depositPaid: number = 0
+): number {
+  const total = unitPrice * quantity;
+  return Math.max(0, total - depositPaid);
+}
+
