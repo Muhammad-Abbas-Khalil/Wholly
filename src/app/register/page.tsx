@@ -86,7 +86,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Ali Raza"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-emerald-600 text-gray-900 font-medium"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
               />
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function RegisterPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="03001234567"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-emerald-600 text-gray-900 font-medium"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 6 characters"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-emerald-600 text-gray-900 font-medium"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
               />
             </div>
           </div>

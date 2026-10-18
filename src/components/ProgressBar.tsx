@@ -66,11 +66,13 @@ export default function ProgressBar({ unitsClaimed, tiers, className = '' }: Pro
             <div
               key={idx}
               className={`flex flex-col items-center transition-colors ${
-                isUnlocked ? 'text-emerald-700 font-bold' : 'text-gray-400'
+                isUnlocked ? 'text-emerald-800 font-bold' : 'text-slate-600 font-semibold'
               }`}
             >
               <span>{tier.minUnits} units</span>
-              <span className="text-[10px]">PKR {tier.pricePerUnit.toLocaleString()}</span>
+              <span className={`text-[10px] ${isUnlocked ? 'text-emerald-700 font-semibold' : 'text-slate-500'}`}>
+                PKR {tier.pricePerUnit.toLocaleString()}
+              </span>
             </div>
           );
         })}

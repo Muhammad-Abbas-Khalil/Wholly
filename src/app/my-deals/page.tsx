@@ -128,7 +128,7 @@ export default function MyDealsPage() {
 
                     <h3 className="text-base font-bold text-gray-900">{deal.product.name}</h3>
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-700 font-medium pt-1">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                         {deal.pickupLocation}
@@ -144,10 +144,10 @@ export default function MyDealsPage() {
                 {/* Units, Price & Payment */}
                 <div className="w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between border-t md:border-t-0 pt-4 md:pt-0 border-gray-100 gap-2">
                   <div className="text-left md:text-right">
-                    <span className="text-xs font-semibold text-gray-500 block">
+                    <span className="text-xs font-semibold text-slate-700 block">
                       Reserved: <strong className="text-gray-900 font-bold">{item.quantity} {deal.product.unit}</strong>
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-slate-600 font-medium">
                       @ PKR {deal.unitPrice.toLocaleString()} / unit
                     </span>
                   </div>

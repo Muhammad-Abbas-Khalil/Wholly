@@ -123,7 +123,7 @@ function LoginForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="03001234567"
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-emerald-600 text-gray-900 font-medium"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-emerald-600 text-gray-900 font-medium"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
             />
           </div>
         </div>

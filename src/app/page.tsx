@@ -105,7 +105,7 @@ export default function HomePage() {
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                   categoryFilter === cat
                     ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-700/20'
-                    : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-300'
+                    : 'bg-white text-slate-800 hover:text-black border border-slate-300 hover:border-slate-400'
                 }`}
               >
                 {cat === 'ALL' ? 'All Staples' : cat}
@@ -113,7 +113,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-semibold text-gray-500 shrink-0 self-end sm:self-center">
+          <div className="flex items-center gap-3 text-xs font-semibold text-slate-700 shrink-0 self-end sm:self-center">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Live Sync (10s)
@@ -168,7 +168,7 @@ export default function HomePage() {
                 1
               </div>
               <h3 className="font-bold text-gray-900 text-base">Claim 1 to 3 Units</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 Browse open pools and reserve your units in 30 seconds with just your phone number.
               </p>
             </div>
@@ -178,7 +178,7 @@ export default function HomePage() {
                 2
               </div>
               <h3 className="font-bold text-gray-900 text-base">Share with Friends</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 Click the WhatsApp share button. As more neighbors join, the wholesale discount tier unlocks.
               </p>
             </div>
@@ -188,7 +188,7 @@ export default function HomePage() {
                 3
               </div>
               <h3 className="font-bold text-gray-900 text-base">Pay Cash at Pickup</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 Collect your order at the designated community hub and pay the final discounted rate in cash.
               </p>
             </div>

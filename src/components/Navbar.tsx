@@ -62,7 +62,7 @@ export default function Navbar() {
                 className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
                   pathname === '/'
                     ? 'text-emerald-700 bg-emerald-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 <ShoppingBag className="w-4 h-4" />
@@ -75,7 +75,7 @@ export default function Navbar() {
                   className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
                     pathname === '/my-deals'
                       ? 'text-emerald-700 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
                   <Users className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function Navbar() {
                   className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
                     pathname.startsWith('/admin')
                       ? 'text-purple-700 bg-purple-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4 text-purple-600" />
@@ -103,22 +103,22 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {/* Quick Demo Login Pills for Evaluators */}
             {!session?.user && (
-              <div className="hidden lg:flex items-center gap-1.5 p-1 bg-gray-100/80 rounded-xl border border-gray-200 text-xs font-medium">
-                <span className="px-2 text-gray-500 font-semibold flex items-center gap-1">
+              <div className="hidden lg:flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium">
+                <span className="px-2 text-slate-700 font-bold flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                   Demo:
                 </span>
                 <button
                   onClick={() => handleDemoLogin('BUYER')}
                   disabled={isDemoLoggingIn}
-                  className="px-2.5 py-1 rounded-lg bg-white shadow-xs text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 font-medium transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-white shadow-xs text-slate-900 hover:text-emerald-700 hover:bg-emerald-50 font-bold transition-colors border border-slate-200"
                 >
                   Buyer
                 </button>
                 <button
                   onClick={() => handleDemoLogin('ADMIN')}
                   disabled={isDemoLoggingIn}
-                  className="px-2.5 py-1 rounded-lg bg-white shadow-xs text-purple-700 hover:bg-purple-50 font-medium transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-white shadow-xs text-purple-900 hover:bg-purple-50 font-bold transition-colors border border-slate-200"
                 >
                   Admin
                 </button>

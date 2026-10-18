@@ -148,7 +148,7 @@ export default function DealCard({ deal }: DealCardProps) {
         </div>
 
         {/* Pickup spot preview */}
-        <div className="pt-2 border-t border-gray-100 text-xs text-gray-500 flex items-start gap-1.5">
+        <div className="pt-2 border-t border-gray-100 text-xs text-slate-700 font-medium flex items-start gap-1.5">
           <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
           <span className="line-clamp-1">{deal.pickupLocation}</span>
         </div>

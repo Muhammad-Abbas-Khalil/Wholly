@@ -231,7 +231,7 @@ export default function DealDetailPage() {
                 {deal.product.name}
               </h1>
 
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-slate-700 font-medium leading-relaxed">
                 {deal.product.description || 'Premium household essential pooled for wholesale pricing.'}
               </p>
 
@@ -274,7 +274,7 @@ export default function DealDetailPage() {
                   <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-gray-900 block">Pickup Location</span>
-                    <span className="text-gray-600">{deal.pickupLocation}</span>
+                    <span className="text-slate-700 font-medium">{deal.pickupLocation}</span>
                   </div>
                 </div>
 
@@ -282,7 +282,7 @@ export default function DealDetailPage() {
                   <Calendar className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-gray-900 block">Collection Schedule</span>
-                    <span className="text-gray-600">{deal.pickupTime}</span>
+                    <span className="text-slate-700 font-medium">{deal.pickupTime}</span>
                   </div>
                 </div>
               </div>
@@ -309,7 +309,7 @@ export default function DealDetailPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <span className="text-xs font-bold text-gray-900 block">Select Units (Max {deal.maxPerUser})</span>
-                      <span className="text-[11px] text-gray-500">
+                      <span className="text-[11px] text-slate-600 font-medium">
                         {isUserJoined
                           ? `Currently holding ${deal.userParticipation.quantity} unit(s)`
                           : 'Zero upfront payment • Pay cash at pickup'}
@@ -323,10 +323,10 @@ export default function DealDetailPage() {
                           key={qty}
                           type="button"
                           onClick={() => setSelectedQuantity(qty)}
-                          className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                          className={`w-10 h-10 rounded-xl font-black text-sm transition-all ${
                             selectedQuantity === qty
                               ? 'bg-emerald-600 text-white shadow-xs scale-105'
-                              : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                              : 'bg-white text-slate-900 border border-slate-300 hover:border-slate-400'
                           }`}
                         >
                           {qty}

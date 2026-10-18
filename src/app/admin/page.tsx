@@ -274,7 +274,7 @@ export default function AdminDashboardPage() {
                 value={productForm.name}
                 onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                 placeholder="e.g. Guard Basmati Rice (10 kg)"
-                className="w-full p-2.5 rounded-xl border border-gray-300"
+                className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
               />
             </div>
 
@@ -286,7 +286,7 @@ export default function AdminDashboardPage() {
                 value={productForm.unit}
                 onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
                 placeholder="e.g. 10 kg bag, 5 L tin"
-                className="w-full p-2.5 rounded-xl border border-gray-300"
+                className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
               />
             </div>
 
@@ -312,7 +312,7 @@ export default function AdminDashboardPage() {
                 value={productForm.imageUrl}
                 onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full p-2.5 rounded-xl border border-gray-300"
+                className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
               />
             </div>
 
@@ -322,7 +322,7 @@ export default function AdminDashboardPage() {
                 value={productForm.description}
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                 rows={2}
-                className="w-full p-2.5 rounded-xl border border-gray-300"
+                className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
               />
             </div>
 
@@ -376,7 +376,7 @@ export default function AdminDashboardPage() {
                   required
                   value={dealForm.deadline}
                   onChange={(e) => setDealForm({ ...dealForm, deadline: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-gray-300"
+                  className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
                 />
               </div>
 
@@ -387,7 +387,7 @@ export default function AdminDashboardPage() {
                   required
                   value={dealForm.pickupLocation}
                   onChange={(e) => setDealForm({ ...dealForm, pickupLocation: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-gray-300"
+                  className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
                 />
               </div>
 
@@ -398,7 +398,7 @@ export default function AdminDashboardPage() {
                   required
                   value={dealForm.pickupTime}
                   onChange={(e) => setDealForm({ ...dealForm, pickupTime: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-gray-300"
+                  className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium"
                 />
               </div>
             </div>
@@ -420,7 +420,7 @@ export default function AdminDashboardPage() {
                           newTiers[idx].minUnits = Number(e.target.value);
                           setDealForm({ ...dealForm, tiers: newTiers });
                         }}
-                        className="w-full p-1.5 rounded border border-gray-300"
+                        className="w-full p-1.5 rounded border border-slate-300 bg-white text-slate-900 font-semibold"
                       />
                     </div>
                     <div>
@@ -433,7 +433,7 @@ export default function AdminDashboardPage() {
                           newTiers[idx].pricePerUnit = Number(e.target.value);
                           setDealForm({ ...dealForm, tiers: newTiers });
                         }}
-                        className="w-full p-1.5 rounded border border-gray-300"
+                        className="w-full p-1.5 rounded border border-slate-300 bg-white text-slate-900 font-semibold"
                       />
                     </div>
                     <div>
@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
                           newTiers[idx].supplierCostPerUnit = Number(e.target.value);
                           setDealForm({ ...dealForm, tiers: newTiers });
                         }}
-                        className="w-full p-1.5 rounded border border-gray-300"
+                        className="w-full p-1.5 rounded border border-slate-300 bg-white text-slate-900 font-semibold"
                       />
                     </div>
                   </div>
