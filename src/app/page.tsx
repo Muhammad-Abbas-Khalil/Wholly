@@ -136,6 +136,10 @@ export default function HomePage() {
               <ShieldCheck className="w-4 h-4 text-emerald-300" />
               100% Genuine Direct-from-Miller
             </span>
+            <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              Factory-Sealed & Zero Adulteration
+            </span>
           </div>
 
           {/* Impact Stats Banner */}
