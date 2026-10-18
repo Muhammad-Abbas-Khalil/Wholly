@@ -130,15 +130,16 @@ describe('Wholly Pricing Engine', () => {
   });
 
   describe('calculateAdvanceDeposit() & calculateBalanceDue()', () => {
-    it('calculates 10% advance deposit correctly based on total pool value', () => {
-      expect(calculateAdvanceDeposit(27000, 10)).toBe(2700);
-      expect(calculateAdvanceDeposit(3000, 10)).toBe(300);
-      expect(calculateAdvanceDeposit(0, 10)).toBe(0);
+    it('calculates 30% advance deposit correctly based on total pool value', () => {
+      expect(calculateAdvanceDeposit(27000, 30)).toBe(8100);
+      expect(calculateAdvanceDeposit(3000, 30)).toBe(900);
+      expect(calculateAdvanceDeposit(3000)).toBe(900); // default 30%
+      expect(calculateAdvanceDeposit(0, 30)).toBe(0);
     });
 
     it('calculates remaining cash balance due at pickup accurately after deducting advance deposit', () => {
-      // 5 units at PKR 2,700 = 13,500 total, 10% advance paid = 1350 -> balance due = 12,150
-      expect(calculateBalanceDue(2700, 5, 1350)).toBe(12150);
+      // 5 units at PKR 2,700 = 13,500 total, 30% advance paid = 4050 -> balance due = 9,450
+      expect(calculateBalanceDue(2700, 5, 4050)).toBe(9450);
       // If no deposit paid yet
       expect(calculateBalanceDue(2700, 5, 0)).toBe(13500);
     });

@@ -45,12 +45,7 @@ export async function POST(
         throw new Error('Please select a valid order quantity');
       }
 
-      // Calculate 10% advance deposit of order total
       const basePrice = deal.tiers[0]?.pricePerUnit ?? 3000;
-      const totalOrderValue = basePrice * quantity;
-      const depositPaid = body.depositPaid
-        ? Math.max(1, Math.round(Number(body.depositPaid)))
-        : Math.max(1, Math.round(totalOrderValue * 0.10));
 
       // Check existing participation
       const existing = await tx.participation.findUnique({
@@ -62,37 +57,86 @@ export async function POST(
         },
       });
 
+      const isExistingActive = existing && existing.status !== 'CANCELLED';
+
       let participation;
-      if (existing) {
+      let additionalUnits = quantity;
+      let additionalDeposit = 0;
+      let isUpdate = false;
+
+      if (isExistingActive) {
+        if (quantity <= existing.quantity) {
+          throw new Error(
+            `You already have ${existing.quantity} unit(s) reserved. To maintain wholesale discount commitments, you can only add more units.`
+          );
+        }
+
+        isUpdate = true;
+        additionalUnits = quantity - existing.quantity;
+        additionalDeposit = body.additionalDeposit
+          ? Math.max(1, Math.round(Number(body.additionalDeposit)))
+          : Math.max(1, Math.round(basePrice * additionalUnits * 0.30));
+
+        const newTotalDeposit = (existing.depositPaid || 0) + additionalDeposit;
+
         participation = await tx.participation.update({
           where: { id: existing.id },
           data: {
             quantity,
-            depositPaid,
+            depositPaid: newTotalDeposit,
             paymentMethod,
             status: 'RESERVED',
           },
         });
       } else {
-        participation = await tx.participation.create({
-          data: {
-            dealId,
-            userId: session.user.id,
-            quantity,
-            depositPaid,
-            paymentMethod,
-            status: 'RESERVED',
-          },
-        });
+        const totalOrderValue = basePrice * quantity;
+        const depositPaid = body.depositPaid
+          ? Math.max(1, Math.round(Number(body.depositPaid)))
+          : Math.max(1, Math.round(totalOrderValue * 0.30));
+
+        additionalDeposit = depositPaid;
+
+        if (existing) {
+          participation = await tx.participation.update({
+            where: { id: existing.id },
+            data: {
+              quantity,
+              depositPaid,
+              paymentMethod,
+              status: 'RESERVED',
+            },
+          });
+        } else {
+          participation = await tx.participation.create({
+            data: {
+              dealId,
+              userId: session.user.id,
+              quantity,
+              depositPaid,
+              paymentMethod,
+              status: 'RESERVED',
+            },
+          });
+        }
       }
 
-      return { deal, participation };
+      return {
+        deal,
+        participation,
+        isUpdate,
+        additionalUnits,
+        additionalDeposit,
+        totalDeposit: participation.depositPaid,
+      };
     });
 
     return NextResponse.json({
       success: true,
       participation: result.participation,
       depositPaid: result.participation.depositPaid,
+      additionalDeposit: result.additionalDeposit,
+      additionalUnits: result.additionalUnits,
+      isUpdate: result.isUpdate,
     });
   } catch (error: any) {
     console.error('Join deal error:', error);

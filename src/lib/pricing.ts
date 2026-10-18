@@ -99,9 +99,9 @@ export function calculatePlatformMargin<T extends TierLike>(
 }
 
 /**
- * Calculates the advance booking deposit percentage (default 10%) to secure orders.
+ * Calculates the advance booking deposit percentage (default 30%) to secure orders.
  */
-export function calculateAdvanceDeposit(totalCost: number, percentage: number = 10): number {
+export function calculateAdvanceDeposit(totalCost: number, percentage: number = 30): number {
   if (totalCost <= 0) return 0;
   return Math.round(totalCost * (percentage / 100));
 }

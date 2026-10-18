@@ -152,7 +152,7 @@ export default function MyDealsPage() {
                     </span>
                     {item.depositPaid > 0 && (
                       <span className="text-[11px] font-bold text-emerald-700 block">
-                        10% Advance Paid: PKR {item.depositPaid.toLocaleString()} (via {item.paymentMethod === 'CARD' ? 'Card' : item.paymentMethod})
+                        30% Advance Paid: PKR {item.depositPaid.toLocaleString()} (via {item.paymentMethod === 'CARD' ? 'Card' : item.paymentMethod})
                       </span>
                     )}
                   </div>
