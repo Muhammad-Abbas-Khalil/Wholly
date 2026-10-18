@@ -32,7 +32,7 @@ export default function RootLayout({
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 text-sm">Wholly (Pakistan)</p>
-                    <p className="text-xs text-slate-500">Buy together, pay wholesale • Cash at pickup</p>
+                    <p className="text-xs text-slate-500">Buy together, pay wholesale • Live in Lahore, Karachi, Islamabad, Peshawar & more</p>
                   </div>
                 </div>
 

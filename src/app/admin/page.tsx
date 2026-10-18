@@ -415,7 +415,7 @@ export default function AdminDashboardPage() {
           <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
             <span className="text-[11px] text-purple-200 font-semibold block">Active Pools</span>
             <span className="text-xl font-black text-white mt-0.5 block">{stats.activePoolsCount}</span>
-            <span className="text-[10px] text-purple-300 mt-1 block">Live in Lahore</span>
+            <span className="text-[10px] text-purple-300 mt-1 block">Lahore, Karachi, Islamabad & Peshawar</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">

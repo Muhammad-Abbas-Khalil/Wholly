@@ -181,7 +181,7 @@ async function main() {
       deadline: fiveDaysLater,
       maxPerUser: 50,
       tokenPerUnit: 150,
-      pickupLocation: 'Wholly Hub @ PSO Fuel Station, Main Boulevard, Gulberg III, Lahore',
+      pickupLocation: 'Wholly Hub @ Boat Basin, Block 5, Clifton, Karachi',
       pickupTime: 'Sunday 11:00 AM - 3:00 PM',
       tiers: {
         create: [
@@ -272,7 +272,7 @@ async function main() {
       deadline: fourDaysLater,
       maxPerUser: 100,
       tokenPerUnit: 150,
-      pickupLocation: 'Wholly Hub @ PSO Station, Block C, Model Town, Lahore',
+      pickupLocation: 'Wholly Hub @ Jamrud Road, University Town, Peshawar',
       pickupTime: 'Sunday 2:00 PM - 6:00 PM',
       tiers: {
         create: [
@@ -303,7 +303,7 @@ async function main() {
       deadline: sixDaysLater,
       maxPerUser: 100,
       tokenPerUnit: 150,
-      pickupLocation: 'Wholly Distribution Point @ Phase 5 Commercial, DHA, Lahore',
+      pickupLocation: 'Wholly Hub @ Main University Road, Gulshan-e-Iqbal, Karachi',
       pickupTime: 'Saturday 11:00 AM - 3:00 PM',
       tiers: {
         create: [
