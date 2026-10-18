@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Phone, Lock, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { User, Phone, Lock, AlertCircle, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,19 +12,39 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
+
+    let cleanPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+    if (cleanPhone.startsWith('+92')) {
+      cleanPhone = '0' + cleanPhone.slice(3);
+    } else if (cleanPhone.startsWith('92') && cleanPhone.length === 12) {
+      cleanPhone = '0' + cleanPhone.slice(2);
+    }
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, password }),
+        body: JSON.stringify({ name: name.trim(), phone: cleanPhone, password }),
       });
 
       const data = await res.json();
@@ -38,14 +58,14 @@ export default function RegisterPage() {
       // Auto sign in after successful registration
       const signInRes = await signIn('credentials', {
         redirect: false,
-        phone,
+        phone: cleanPhone,
         password,
       });
 
       if (signInRes?.error) {
         router.push('/login');
       } else {
-        router.push('/');
+        router.push('/account');
         router.refresh();
       }
     } catch {
@@ -62,9 +82,9 @@ export default function RegisterPage() {
           <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-md shadow-emerald-700/20">
             W
           </div>
-          <h1 className="text-2xl font-black text-gray-900">Create an Account</h1>
+          <h1 className="text-2xl font-black text-gray-900">Create Buyer Account</h1>
           <p className="text-xs text-gray-500">
-            Join group deals and buy household groceries at wholesale rates.
+            Join neighborhood staple pools and unlock direct wholesale prices.
           </p>
         </div>
 
@@ -92,7 +112,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="font-bold text-gray-700 block mb-1">Phone Number</label>
+            <label className="font-bold text-gray-700 block mb-1">Pakistani Mobile Number</label>
             <div className="relative">
               <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
               <input
@@ -100,10 +120,13 @@ export default function RegisterPage() {
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="03001234567"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
+                placeholder="03211234567"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium font-mono"
               />
             </div>
+            <span className="text-[10px] text-slate-500 mt-1 block">
+              11 digits starting with 03 (e.g., 03211234567)
+            </span>
           </div>
 
           <div>
@@ -111,27 +134,52 @@ export default function RegisterPage() {
             <div className="relative">
               <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 6 characters"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="font-bold text-gray-700 block mb-1">Confirm Password</label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-type your password"
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-emerald-600 font-medium"
               />
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-gray-50 border border-gray-200/80 text-[11px] text-gray-500 space-y-1">
-            <div className="flex items-center gap-1 text-emerald-700 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" /> No advance payment needed
+          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-950 space-y-1">
+            <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Transparent Wholly Guarantee
             </div>
-            <p>You only pay in cash when collecting your order at the pickup point.</p>
+            <p className="text-emerald-700 leading-relaxed font-medium">
+              30% advance deposit secures bulk factory inventory via JazzCash, Easypaisa, or Card. Remaining 70% is payable in cash upon in-person collection at pickup.
+            </p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 disabled:opacity-75"
           >
             {loading ? 'Creating account...' : 'Create Account'}
             <ArrowRight className="w-4 h-4" />

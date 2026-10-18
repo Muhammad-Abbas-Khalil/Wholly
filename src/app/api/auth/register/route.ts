@@ -11,9 +11,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Please enter a valid name' }, { status: 400 });
     }
 
-    if (!phone || typeof phone !== 'string' || phone.trim().length < 10) {
+    if (!phone || typeof phone !== 'string') {
       return NextResponse.json(
-        { error: 'Please enter a valid phone number (e.g. 03001234567)' },
+        { error: 'Please enter your Pakistani mobile number' },
+        { status: 400 }
+      );
+    }
+
+    let cleanPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+    if (cleanPhone.startsWith('+92')) {
+      cleanPhone = '0' + cleanPhone.slice(3);
+    } else if (cleanPhone.startsWith('92') && cleanPhone.length === 12) {
+      cleanPhone = '0' + cleanPhone.slice(2);
+    }
+
+    if (!/^03\d{9}$/.test(cleanPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid phone number. Must be 11 digits starting with 03 (e.g. 03211234567 or +923211234567)' },
         { status: 400 }
       );
     }
@@ -24,8 +38,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const cleanPhone = phone.trim();
 
     // Check if phone already exists
     const existing = await prisma.user.findUnique({

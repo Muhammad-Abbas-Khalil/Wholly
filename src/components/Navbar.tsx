@@ -142,10 +142,19 @@ export default function Navbar() {
             {status === 'loading' ? (
               <div className="w-20 h-8 bg-gray-100 rounded-lg animate-pulse" />
             ) : session?.user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {session.user.role === 'ADMIN' && (
+                  <Link
+                    href="/admin"
+                    className="md:hidden px-2.5 py-1 rounded-lg text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 flex items-center gap-1"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/account"
-                  className="text-right hidden sm:block px-2.5 py-1 rounded-xl hover:bg-slate-100 transition-colors group"
+                  className="text-right px-2.5 py-1 rounded-xl hover:bg-slate-100 transition-colors group"
                   title="View Account & Profile"
                 >
                   <p className="text-xs font-bold text-gray-900 group-hover:text-emerald-700 leading-tight">
@@ -153,7 +162,7 @@ export default function Navbar() {
                   </p>
                   <p className="text-[11px] font-medium text-gray-500">
                     {session.user.role === 'ADMIN' ? (
-                      <span className="text-purple-600 font-semibold">Admin</span>
+                      <span className="text-purple-600 font-bold">Admin Portal</span>
                     ) : (
                       session.user.phone
                     )}

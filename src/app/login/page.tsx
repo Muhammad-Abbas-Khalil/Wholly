@@ -21,10 +21,17 @@ function LoginForm() {
     setError(null);
     setLoading(true);
 
+    let cleanPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+    if (cleanPhone.startsWith('+92')) {
+      cleanPhone = '0' + cleanPhone.slice(3);
+    } else if (cleanPhone.startsWith('92') && cleanPhone.length === 12) {
+      cleanPhone = '0' + cleanPhone.slice(2);
+    }
+
     try {
       const res = await signIn('credentials', {
         redirect: false,
-        phone,
+        phone: cleanPhone,
         password,
       });
 

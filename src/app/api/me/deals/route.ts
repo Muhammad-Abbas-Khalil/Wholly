@@ -63,7 +63,11 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ participations: userDeals });
+    return NextResponse.json({
+      participations: userDeals,
+      reservations: userDeals,
+      orders: userDeals,
+    });
   } catch (error) {
     console.error('Failed to get user deals:', error);
     return NextResponse.json({ error: 'Failed to retrieve your deals' }, { status: 500 });

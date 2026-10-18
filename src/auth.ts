@@ -32,7 +32,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const phone = String(credentials.phone).trim();
+        let phone = String(credentials.phone).replace(/[\s\-\(\)]/g, '').trim();
+        if (phone.startsWith('+92')) {
+          phone = '0' + phone.slice(3);
+        } else if (phone.startsWith('92') && phone.length === 12) {
+          phone = '0' + phone.slice(2);
+        }
+
         const user = await prisma.user.findUnique({
           where: { phone },
         });

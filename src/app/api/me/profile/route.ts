@@ -100,10 +100,15 @@ export async function PATCH(request: Request) {
 
     // Validate and update phone
     if (phone !== undefined) {
-      const cleanPhone = String(phone).replace(/[-\s]/g, '').trim();
+      let cleanPhone = String(phone).replace(/[\s\-\(\)]/g, '').trim();
+      if (cleanPhone.startsWith('+92')) {
+        cleanPhone = '0' + cleanPhone.slice(3);
+      } else if (cleanPhone.startsWith('92') && cleanPhone.length === 12) {
+        cleanPhone = '0' + cleanPhone.slice(2);
+      }
       if (!/^03\d{9}$/.test(cleanPhone)) {
         return NextResponse.json(
-          { error: 'Invalid Pakistani mobile number. Must be 11 digits starting with 03 (e.g., 03211234567)' },
+          { error: 'Invalid Pakistani mobile number. Must be 11 digits starting with 03 (e.g., 03211234567 or +923211234567)' },
           { status: 400 }
         );
       }
