@@ -40,14 +40,17 @@ export async function POST(
         throw new Error('The deadline for this deal has already passed');
       }
 
-      const limit = deal.maxPerUser || 100;
-      if (quantity > limit) {
-        throw new Error(`The maximum order for this pool is ${limit} units`);
+      // No artificial limit on units - users can order any quantity they need
+      if (quantity < 1 || quantity > 50000) {
+        throw new Error('Please select a valid order quantity');
       }
 
-      // Calculate commitment booking token to eliminate spam
-      const tokenRate = deal.tokenPerUnit ?? 150;
-      const depositPaid = Math.round(quantity * tokenRate);
+      // Calculate 10% advance deposit of order total
+      const basePrice = deal.tiers[0]?.pricePerUnit ?? 3000;
+      const totalOrderValue = basePrice * quantity;
+      const depositPaid = body.depositPaid
+        ? Math.max(1, Math.round(Number(body.depositPaid)))
+        : Math.max(1, Math.round(totalOrderValue * 0.10));
 
       // Check existing participation
       const existing = await tx.participation.findUnique({

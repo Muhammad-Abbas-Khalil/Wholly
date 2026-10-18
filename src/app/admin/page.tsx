@@ -416,14 +416,14 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="font-bold text-amber-700 block mb-1">Anti-Spam Token / Unit (PKR)</label>
+                <label className="font-bold text-emerald-800 block mb-1">Advance Booking Deposit / Unit (PKR)</label>
                 <input
                   type="number"
                   min="0"
                   required
                   value={dealForm.tokenPerUnit}
                   onChange={(e) => setDealForm({ ...dealForm, tokenPerUnit: Number(e.target.value) })}
-                  className="w-full p-2.5 rounded-xl border border-amber-300 bg-white text-slate-900 font-bold"
+                  className="w-full p-2.5 rounded-xl border border-emerald-300 bg-white text-slate-900 font-bold"
                 />
               </div>
             </div>

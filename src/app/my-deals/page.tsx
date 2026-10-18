@@ -151,8 +151,8 @@ export default function MyDealsPage() {
                       @ PKR {deal.unitPrice.toLocaleString()} / unit (Total: PKR {deal.totalCost.toLocaleString()})
                     </span>
                     {item.depositPaid > 0 && (
-                      <span className="text-[11px] font-bold text-amber-700 block">
-                        Deposit Paid: PKR {item.depositPaid.toLocaleString()} ({item.paymentMethod})
+                      <span className="text-[11px] font-bold text-emerald-700 block">
+                        10% Advance Paid: PKR {item.depositPaid.toLocaleString()} (via {item.paymentMethod === 'CARD' ? 'Card' : item.paymentMethod})
                       </span>
                     )}
                   </div>

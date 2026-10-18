@@ -7,7 +7,7 @@ import {
   calculateDealProgress,
   calculateSavings,
   calculatePlatformMargin,
-  calculateBookingToken,
+  calculateAdvanceDeposit,
   calculateBalanceDue,
   type TierLike,
   type ParticipationLike,
@@ -129,17 +129,16 @@ describe('Wholly Pricing Engine', () => {
     });
   });
 
-  describe('calculateBookingToken() & calculateBalanceDue()', () => {
-    it('calculates commitment token at PKR 150 per unit correctly', () => {
-      expect(calculateBookingToken(1, 150)).toBe(150);
-      expect(calculateBookingToken(5, 150)).toBe(750);
-      expect(calculateBookingToken(10, 150)).toBe(1500);
-      expect(calculateBookingToken(0, 150)).toBe(0);
+  describe('calculateAdvanceDeposit() & calculateBalanceDue()', () => {
+    it('calculates 10% advance deposit correctly based on total pool value', () => {
+      expect(calculateAdvanceDeposit(27000, 10)).toBe(2700);
+      expect(calculateAdvanceDeposit(3000, 10)).toBe(300);
+      expect(calculateAdvanceDeposit(0, 10)).toBe(0);
     });
 
-    it('calculates remaining cash balance due at pickup accurately after deducting deposit', () => {
-      // 5 units at PKR 2,700 = 13,500 total, deposit paid = 750 -> balance due = 12,750
-      expect(calculateBalanceDue(2700, 5, 750)).toBe(12750);
+    it('calculates remaining cash balance due at pickup accurately after deducting advance deposit', () => {
+      // 5 units at PKR 2,700 = 13,500 total, 10% advance paid = 1350 -> balance due = 12,150
+      expect(calculateBalanceDue(2700, 5, 1350)).toBe(12150);
       // If no deposit paid yet
       expect(calculateBalanceDue(2700, 5, 0)).toBe(13500);
     });

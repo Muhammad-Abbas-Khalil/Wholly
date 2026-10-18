@@ -99,15 +99,15 @@ export function calculatePlatformMargin<T extends TierLike>(
 }
 
 /**
- * Calculates the commitment booking token to prevent spam and order abandonment.
+ * Calculates the advance booking deposit percentage (default 10%) to secure orders.
  */
-export function calculateBookingToken(quantity: number, tokenPerUnit: number = 150): number {
-  if (quantity <= 0) return 0;
-  return Math.round(quantity * tokenPerUnit);
+export function calculateAdvanceDeposit(totalCost: number, percentage: number = 10): number {
+  if (totalCost <= 0) return 0;
+  return Math.round(totalCost * (percentage / 100));
 }
 
 /**
- * Calculates the remaining balance due in cash at pickup after deducting deposit.
+ * Calculates the remaining balance due in cash at pickup after deducting advance deposit.
  */
 export function calculateBalanceDue(
   unitPrice: number,
