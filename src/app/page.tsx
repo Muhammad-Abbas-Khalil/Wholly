@@ -14,6 +14,9 @@ import {
   CreditCard,
   CheckCircle2,
   MapPin,
+  Radio,
+  Clock,
+  Compass,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -63,6 +66,18 @@ export default function HomePage() {
 
   const cities = ['ALL', 'Lahore', 'Karachi', 'Islamabad', 'Peshawar'];
 
+  // Dynamic counts per city
+  const cityCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      ALL: deals.length,
+      Lahore: deals.filter((d) => d.pickupLocation?.toLowerCase().includes('lahore')).length,
+      Karachi: deals.filter((d) => d.pickupLocation?.toLowerCase().includes('karachi')).length,
+      Islamabad: deals.filter((d) => d.pickupLocation?.toLowerCase().includes('islamabad')).length,
+      Peshawar: deals.filter((d) => d.pickupLocation?.toLowerCase().includes('peshawar')).length,
+    };
+    return counts;
+  }, [deals]);
+
   const filteredDeals = useMemo(() => {
     return deals.filter((deal) => {
       const matchesCategory = categoryFilter === 'ALL' || deal.product.category === categoryFilter;
@@ -74,18 +89,18 @@ export default function HomePage() {
   }, [deals, categoryFilter, cityFilter]);
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-8 pb-16">
       {/* Catchy Modern Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-teal-950 text-white pt-16 sm:pt-20 pb-20 px-4 sm:px-6 lg:px-8 shadow-inner">
+      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-teal-950 text-white pt-16 sm:pt-20 shadow-inner">
         {/* Decorative background aura */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.22),transparent_55%)] pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto text-center space-y-6">
+        <div className="relative max-w-5xl mx-auto text-center space-y-6 px-4 sm:px-6 lg:px-8 pb-14">
           {/* Badge with All 4 Major Cities */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-bold backdrop-blur-md shadow-xs animate-in fade-in duration-300">
             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            Direct-From-Mill Wholesale Grocery Pools • Lahore • Karachi • Islamabad • Peshawar & More
+            Direct-From-Mill Wholesale Grocery Pools • Pakistan's First Bulk Buying Network
           </div>
 
           {/* Headline */}
@@ -124,7 +139,7 @@ export default function HomePage() {
           </div>
 
           {/* Impact Stats Banner */}
-          <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto text-left text-xs">
+          <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto text-left text-xs">
             <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
               <span className="text-[11px] text-emerald-300 font-semibold block">Total Volume Pooled</span>
               <span className="text-xl font-black text-white mt-0.5 block">24,500+ kg</span>
@@ -150,78 +165,141 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Live Operating Cities & Coming Soon Strip (At End of Hero Section) */}
+        <div className="border-t border-emerald-800/50 bg-emerald-950/80 backdrop-blur-md py-4 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 text-xs">
+            {/* Live Operating Cities */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-400/30 font-black text-[11px] uppercase tracking-wider shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                Live Hubs Operating Now:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white font-bold flex items-center gap-1.5 backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Lahore <span className="text-[10px] text-emerald-300 font-medium">(Model Town & DHA)</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white font-bold flex items-center gap-1.5 backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Karachi <span className="text-[10px] text-emerald-300 font-medium">(Clifton & Gulshan)</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white font-bold flex items-center gap-1.5 backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Islamabad <span className="text-[10px] text-emerald-300 font-medium">(F-7 Markaz)</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white font-bold flex items-center gap-1.5 backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Peshawar <span className="text-[10px] text-emerald-300 font-medium">(University Town)</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Coming Soon Expansion Cities */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 xl:pt-0">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[11px] font-black uppercase tracking-wider shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                Coming Soon:
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-purple-200/90 font-semibold">
+                <span className="px-2.5 py-0.5 rounded-lg bg-purple-900/40 border border-purple-400/20">Rawalpindi</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-purple-900/40 border border-purple-400/20">Faisalabad</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-purple-900/40 border border-purple-400/20">Multan</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-purple-900/40 border border-purple-400/20">Gujranwala</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-purple-900/40 border border-purple-400/20">Quetta</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* Active Cities & Expansion Strip */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20">
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-lg p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-700">
-              <MapPin className="w-5 h-5" />
-            </span>
-            <div>
-              <span className="text-sm font-black text-slate-900 block">Available in Active City Hubs:</span>
-              <span className="text-xs text-slate-500">Pick up from verified community hubs across Pakistan</span>
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Separate Filter Console Above Deals (City Selection + Category Selection) */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+          {/* Row 1: City Selection to Filter Deals */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-600" />
+                Select Pickup City / Hub:
+              </span>
+              {cityFilter !== 'ALL' && (
+                <button
+                  onClick={() => setCityFilter('ALL')}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline"
+                >
+                  Clear City Filter (Show All)
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {cities.map((city) => {
+                const count = cityCounts[city] ?? 0;
+                const isSelected = cityFilter === city;
+
+                return (
+                  <button
+                    key={city}
+                    onClick={() => setCityFilter(city)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                      isSelected
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{city === 'ALL' ? '🇵🇰 All Pakistan' : `📍 ${city}`}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                        isSelected ? 'bg-white/20 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-            {cities.map((city) => (
+          {/* Row 2: Category Filter & Live Polling Status */}
+          <div className="pt-3 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Filter by Staple Category:
+              </span>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoryFilter(cat)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
+                      categoryFilter === cat
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {cat === 'ALL' ? 'All Products' : cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 shrink-0 self-start md:self-end pt-1">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Hub Sync
+              </span>
               <button
-                key={city}
-                onClick={() => setCityFilter(city)}
-                className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
-                  cityFilter === city
-                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                onClick={() => fetchDeals(true)}
+                disabled={isRefreshing}
+                className="p-1 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                title="Refresh live prices"
               >
-                {city !== 'ALL' && <span className={`w-2 h-2 rounded-full ${cityFilter === city ? 'bg-white' : 'bg-emerald-500'} animate-pulse`} />}
-                {city === 'ALL' ? 'All Cities' : city}
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
               </button>
-            ))}
-
-            <span className="px-3 py-2 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5 font-bold text-xs">
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              Coming Soon to Rawalpindi, Faisalabad & Multan
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-2">
-        {/* Filter bar & Auto-poll indicator */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-                  categoryFilter === cat
-                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-700/20'
-                    : 'bg-white text-slate-800 hover:text-black border border-slate-300 hover:border-slate-400'
-                }`}
-              >
-                {cat === 'ALL' ? 'All Staples' : cat}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 text-xs font-semibold text-slate-700 shrink-0 self-end sm:self-center">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync (10s)
-            </span>
-            <button
-              onClick={() => fetchDeals(true)}
-              disabled={isRefreshing}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-              title="Refresh now"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
-            </button>
+            </div>
           </div>
         </div>
 
@@ -239,7 +317,7 @@ export default function HomePage() {
           <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-300 p-8 space-y-3">
             <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-2" />
             <h3 className="text-base font-bold text-gray-900">No deals found in this selection</h3>
-            <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               No live pools matching {categoryFilter !== 'ALL' ? `category "${categoryFilter}"` : ''}{' '}
               {cityFilter !== 'ALL' ? `in ${cityFilter}` : ''}. Check back soon or reset filters.
             </p>
