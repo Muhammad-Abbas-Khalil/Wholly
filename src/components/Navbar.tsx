@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { ShoppingBag, Users, ShieldCheck, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { ShoppingBag, Users, ShieldCheck, LogIn, LogOut, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -70,17 +70,31 @@ export default function Navbar() {
               </Link>
 
               {session?.user && (
-                <Link
-                  href="/my-deals"
-                  className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-                    pathname === '/my-deals'
-                      ? 'text-emerald-700 bg-emerald-50'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  My Deals
-                </Link>
+                <>
+                  <Link
+                    href="/my-deals"
+                    className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                      pathname === '/my-deals'
+                        ? 'text-emerald-700 bg-emerald-50'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    My Deals
+                  </Link>
+
+                  <Link
+                    href="/account"
+                    className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                      pathname === '/account'
+                        ? 'text-emerald-700 bg-emerald-50'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    My Account
+                  </Link>
+                </>
               )}
 
               {session?.user?.role === 'ADMIN' && (
@@ -129,8 +143,12 @@ export default function Navbar() {
               <div className="w-20 h-8 bg-gray-100 rounded-lg animate-pulse" />
             ) : session?.user ? (
               <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-gray-900 leading-tight">
+                <Link
+                  href="/account"
+                  className="text-right hidden sm:block px-2.5 py-1 rounded-xl hover:bg-slate-100 transition-colors group"
+                  title="View Account & Profile"
+                >
+                  <p className="text-xs font-bold text-gray-900 group-hover:text-emerald-700 leading-tight">
                     {session.user.name || 'User'}
                   </p>
                   <p className="text-[11px] font-medium text-gray-500">
@@ -140,7 +158,7 @@ export default function Navbar() {
                       session.user.phone
                     )}
                   </p>
-                </div>
+                </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="p-2 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"

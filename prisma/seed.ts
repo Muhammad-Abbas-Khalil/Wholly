@@ -110,7 +110,29 @@ async function main() {
     },
   });
 
-  console.log('📦 Created Products.');
+  const atta = await prisma.product.create({
+    data: {
+      name: 'Sunridge Fortified Chakki Atta (10 kg)',
+      description:
+        '100% whole wheat chakki atta stone-ground to perfection. Enriched with natural dietary fiber, iron, zinc, folic acid & Vitamin B12 for soft, healthy rotis.',
+      unit: '10 kg bag',
+      category: 'Flour & Grains',
+      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
+    },
+  });
+
+  const milk = await prisma.product.create({
+    data: {
+      name: "Olper's All-Natural Full Cream Milk (Carton of 12 x 1L)",
+      description:
+        'Premium UHT treated pure cow & buffalo milk (12 x 1L Tetra Pak carton). Rich in calcium, protein, and essential vitamins without preservatives.',
+      unit: 'Carton (12 x 1L)',
+      category: 'Dairy & Breakfast',
+      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80',
+    },
+  });
+
+  console.log('📦 Created Products (6 staple grocery categories).');
 
   // 3. Create Deals
   // Deal 1: Dalda Oil - ACTIVE, 14 units claimed (6 more to unlock 2,700 PKR)
@@ -234,13 +256,74 @@ async function main() {
 
   await prisma.participation.createMany({
     data: [
-      { dealId: sugarDeal.id, userId: buyer1.id, quantity: 3, status: ParticipationStatus.COLLECTED },
-      { dealId: sugarDeal.id, userId: buyer2.id, quantity: 3, status: ParticipationStatus.COLLECTED },
-      { dealId: sugarDeal.id, userId: buyer3.id, quantity: 2, status: ParticipationStatus.NO_SHOW },
+      { dealId: sugarDeal.id, userId: buyer1.id, quantity: 3, depositPaid: 720, paymentMethod: 'CARD', status: ParticipationStatus.COLLECTED },
+      { dealId: sugarDeal.id, userId: buyer2.id, quantity: 3, depositPaid: 720, paymentMethod: 'JAZZCASH', status: ParticipationStatus.COLLECTED },
+      { dealId: sugarDeal.id, userId: buyer3.id, quantity: 2, depositPaid: 480, paymentMethod: 'EASYPAISA', status: ParticipationStatus.NO_SHOW },
     ],
   });
 
-  console.log('✅ Seed finished successfully!');
+  // Deal 5: Sunridge Fortified Chakki Atta - ACTIVE, 11 units claimed (close to 2nd tier!)
+  const fourDaysLater = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
+  const attaDeal = await prisma.deal.create({
+    data: {
+      productId: atta.id,
+      createdById: admin.id,
+      status: DealStatus.OPEN,
+      deadline: fourDaysLater,
+      maxPerUser: 100,
+      tokenPerUnit: 150,
+      pickupLocation: 'Wholly Hub @ PSO Station, Block C, Model Town, Lahore',
+      pickupTime: 'Sunday 2:00 PM - 6:00 PM',
+      tiers: {
+        create: [
+          { minUnits: 1, pricePerUnit: 1550, supplierCostPerUnit: 1350 },
+          { minUnits: 10, pricePerUnit: 1420, supplierCostPerUnit: 1290 },
+          { minUnits: 25, pricePerUnit: 1320, supplierCostPerUnit: 1220 },
+        ],
+      },
+    },
+  });
+
+  await prisma.participation.createMany({
+    data: [
+      { dealId: attaDeal.id, userId: buyer1.id, quantity: 3, depositPaid: Math.round(1420 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: attaDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(1420 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+      { dealId: attaDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(1420 * 3 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
+      { dealId: attaDeal.id, userId: buyer4.id, quantity: 2, depositPaid: Math.round(1420 * 2 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+    ],
+  });
+
+  // Deal 6: Olper's Milk - ACTIVE, 8 units claimed (needs 2 more for 10-unit tier)
+  const sixDaysLater = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const milkDeal = await prisma.deal.create({
+    data: {
+      productId: milk.id,
+      createdById: admin.id,
+      status: DealStatus.OPEN,
+      deadline: sixDaysLater,
+      maxPerUser: 100,
+      tokenPerUnit: 150,
+      pickupLocation: 'Wholly Distribution Point @ Phase 5 Commercial, DHA, Lahore',
+      pickupTime: 'Saturday 11:00 AM - 3:00 PM',
+      tiers: {
+        create: [
+          { minUnits: 1, pricePerUnit: 3840, supplierCostPerUnit: 3400 },
+          { minUnits: 10, pricePerUnit: 3480, supplierCostPerUnit: 3150 },
+          { minUnits: 20, pricePerUnit: 3240, supplierCostPerUnit: 2950 },
+        ],
+      },
+    },
+  });
+
+  await prisma.participation.createMany({
+    data: [
+      { dealId: milkDeal.id, userId: buyer1.id, quantity: 2, depositPaid: Math.round(3840 * 2 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
+      { dealId: milkDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(3840 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: milkDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(3840 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+    ],
+  });
+
+  console.log('✅ Seed finished successfully with 6 staple products and live wholesale deals!');
 }
 
 main()

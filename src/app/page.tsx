@@ -10,7 +10,12 @@ import {
   ShoppingBag,
   ArrowRight,
   TrendingDown,
+  Sparkles,
+  CreditCard,
+  CheckCircle2,
+  MapPin,
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function HomePage() {
   const [deals, setDeals] = useState<any[]>([]);
@@ -37,7 +42,7 @@ export default function HomePage() {
   useEffect(() => {
     fetchDeals();
 
-    // 10-second polling for live updates as specified in blueprint
+    // 10-second polling for live updates
     const pollInterval = setInterval(() => {
       fetchDeals(false);
     }, 10000);
@@ -45,7 +50,15 @@ export default function HomePage() {
     return () => clearInterval(pollInterval);
   }, []);
 
-  const categories = ['ALL', 'Cooking Oil', 'Rice & Grains', 'Tea & Beverages', 'Sugar & Sweeteners'];
+  const categories = [
+    'ALL',
+    'Flour & Grains',
+    'Cooking Oil',
+    'Dairy & Breakfast',
+    'Rice & Grains',
+    'Tea & Beverages',
+    'Sugar & Sweeteners',
+  ];
 
   const filteredDeals = deals.filter((deal) => {
     if (categoryFilter === 'ALL') return true;
@@ -54,41 +67,79 @@ export default function HomePage() {
 
   return (
     <div className="space-y-12 pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-800 to-teal-900 text-white pt-16 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.15),transparent_50%)]" />
+      {/* Catchy Modern Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-teal-950 text-white pt-16 sm:pt-20 pb-20 px-4 sm:px-6 lg:px-8 shadow-inner">
+        {/* Decorative background aura */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.22),transparent_55%)] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
         <div className="relative max-w-5xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold backdrop-blur-md">
-            <TrendingDown className="w-4 h-4 text-emerald-300" />
-            Save 10% to 25% on Monthly Staples
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-bold backdrop-blur-md shadow-xs animate-in fade-in duration-300">
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            Direct-From-Mill Wholesale Grocery Pools • Lahore & Islamabad
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
-            Buy Together. <br className="hidden sm:inline" />
+          {/* Punchy Catchy Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
+            Stop Paying Retail Markups.{' '}
+            <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-200">
-              Pay Wholesale.
+              Pool Orders. Pay Wholesale.
             </span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-emerald-100 font-medium leading-relaxed">
-            Wholly lets neighbors and friends pool staple grocery orders together. When enough
-            units are claimed, the wholesale discount unlocks for everyone.
+          {/* Subtitle */}
+          <p className="max-w-2xl mx-auto text-base sm:text-lg text-emerald-100/90 font-medium leading-relaxed">
+            Wholly lets Pakistani families and neighbors pool monthly staple grocery orders together.
+            When the community reaches volume tiers, genuine wholesale discounts unlock for everyone.
           </p>
 
-          {/* Value Props Pills */}
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-semibold text-emerald-200">
-            <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-              <Coins className="w-4 h-4 text-amber-300" />
-              Pay Cash at Pickup (No Advance)
+          {/* Corrected & Accurate Value Prop Pills */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-semibold text-emerald-100">
+            <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
+              <ShoppingBag className="w-4 h-4 text-emerald-300" />
+              No Unit Limits
             </span>
-            <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-              <Users className="w-4 h-4 text-emerald-300" />
-              Max 3 Units Cap Per Person
+            <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
+              <CreditCard className="w-4 h-4 text-amber-300" />
+              30% Advance (JazzCash / Easypaisa / Card)
             </span>
-            <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-              <ShieldCheck className="w-4 h-4 text-teal-300" />
-              Zero Fee If Threshold Not Met
+            <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
+              <Coins className="w-4 h-4 text-teal-300" />
+              Remaining 70% Cash on Pickup
             </span>
+            <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
+              <ShieldCheck className="w-4 h-4 text-emerald-300" />
+              100% Genuine Direct-from-Miller
+            </span>
+          </div>
+
+          {/* Impact Stats Banner */}
+          <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto text-left text-xs">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+              <span className="text-[11px] text-emerald-300 font-semibold block">Total Pooled</span>
+              <span className="text-xl font-black text-white mt-0.5 block">18,500+ kg</span>
+              <span className="text-[10px] text-emerald-200/70">Atta, Rice, Oil & Milk</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+              <span className="text-[11px] text-emerald-300 font-semibold block">Avg. Family Savings</span>
+              <span className="text-xl font-black text-amber-300 mt-0.5 block">Save 15% – 35%</span>
+              <span className="text-[10px] text-emerald-200/70">Below Superstore Rates</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+              <span className="text-[11px] text-emerald-300 font-semibold block">Neighborhood Hubs</span>
+              <span className="text-xl font-black text-white mt-0.5 block">4 Pickup Spots</span>
+              <span className="text-[10px] text-emerald-200/70">Lahore & Islamabad</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+              <span className="text-[11px] text-emerald-300 font-semibold block">Fulfillment Trust</span>
+              <span className="text-xl font-black text-emerald-300 mt-0.5 block">100% Verified</span>
+              <span className="text-[10px] text-emerald-200/70">Inspect before final pay</span>
+            </div>
           </div>
         </div>
       </section>
