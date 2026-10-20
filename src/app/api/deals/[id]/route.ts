@@ -52,11 +52,16 @@ export async function GET(
     const upcomingTier = nextTier(deal.tiers, units);
     const neededUnits = unitsToNextTier(deal.tiers, units);
     const progress = calculateDealProgress(deal.tiers, units);
-    const savings = calculateSavings(deal.tiers, activeTier);
+
+    const retailPrice = deal.retailPrice || (deal.product as any).retailPrice || (deal.tiers[0]?.pricePerUnit ? Math.round(deal.tiers[0].pricePerUnit * 1.1) : 0);
+    const savings = calculateSavings(deal.tiers, activeTier, retailPrice);
     const platformMargin = calculatePlatformMargin(activeTier, units);
 
-    const basePrice = deal.tiers[0]?.pricePerUnit ?? 0;
-    const currentPrice = activeTier ? activeTier.pricePerUnit : basePrice;
+    const minUnitsRequired = deal.tiers[0]?.minUnits ?? 1;
+    const isUnlocked = activeTier !== null;
+
+    const basePrice = retailPrice || (deal.tiers[0]?.pricePerUnit ?? 0);
+    const currentPrice = activeTier ? activeTier.pricePerUnit : (deal.tiers[0]?.pricePerUnit ?? basePrice);
 
     // Check if the current logged-in user has joined
     const userParticipation = session?.user
@@ -79,6 +84,9 @@ export async function GET(
         currentTier: activeTier,
         nextTier: upcomingTier,
         unitsToNextTier: neededUnits,
+        minUnitsRequired,
+        isUnlocked,
+        retailPrice,
         currentPrice,
         basePrice,
         savings,

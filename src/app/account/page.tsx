@@ -27,7 +27,10 @@ import {
   Users,
   Check,
   XCircle,
+  QrCode,
 } from 'lucide-react';
+import { formatReservedUnits, getPickupCode } from '@/lib/pricing';
+import PickupPassModal from '@/components/PickupPassModal';
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -38,6 +41,7 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [adminDeals, setAdminDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPass, setSelectedPass] = useState<any | null>(null);
 
   // Profile Edit State
   const [name, setName] = useState('');
@@ -57,17 +61,6 @@ export default function AccountPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const isAdmin = profile?.user?.role === 'ADMIN' || session?.user?.role === 'ADMIN';
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/account');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchUserData();
-    }
-  }, [status]);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -105,6 +98,17 @@ export default function AccountPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/account');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchUserData();
+    }
+  }, [status]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -468,7 +472,7 @@ export default function AccountPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
                     <div className="p-2 rounded-xl bg-slate-50">
                       <span className="text-[10px] text-slate-500 block">Claimed</span>
-                      <span className="font-black text-slate-900">{deal.unitsClaimed} {deal.product?.unit}</span>
+                      <span className="font-black text-slate-900">{formatReservedUnits(deal.unitsClaimed, deal.product?.unit)}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50">
                       <span className="text-[10px] text-slate-500 block">Collections</span>
@@ -583,7 +587,7 @@ export default function AccountPage() {
                     <div className="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 gap-3">
                       <div className="text-left lg:text-right space-y-0.5">
                         <span className="text-xs font-semibold text-slate-600 block">
-                          Reserved: <strong className="text-slate-900 font-black">{item.quantity} {deal.product?.unit}</strong>
+                          Reserved: <strong className="text-slate-900 font-black">{formatReservedUnits(item.quantity, deal.product?.unit)}</strong>
                         </span>
 
                         <span className="text-xs text-slate-600 font-medium block">
@@ -607,7 +611,33 @@ export default function AccountPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 self-stretch sm:self-auto justify-end">
+                      <div className="flex flex-wrap items-center gap-2 pt-1 self-stretch sm:self-auto justify-end">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedPass({
+                              pickupCode: getPickupCode(item.participationId),
+                              participationId: item.participationId,
+                              buyerName: profile?.name || session?.user?.name || undefined,
+                              buyerPhone: profile?.phone || session?.user?.phone || undefined,
+                              productName: deal.product?.name,
+                              productImage: deal.product?.imageUrl,
+                              productCategory: deal.product?.category,
+                              units: formatReservedUnits(item.quantity, deal.product?.unit),
+                              depositPaid: item.depositPaid || 0,
+                              paymentMethod: item.paymentMethod,
+                              balanceDue: item.balanceDue || Math.max(0, deal.totalCost - (item.depositPaid || 0)),
+                              pickupLocation: deal.pickupLocation,
+                              pickupTime: deal.pickupTime,
+                              status: item.status,
+                            })
+                          }
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-950 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 shadow-2xs"
+                        >
+                          <QrCode className="w-3.5 h-3.5 text-emerald-700" />
+                          Pickup Pass & QR
+                        </button>
+
                         <Link
                           href={`/deals/${deal.id}`}
                           className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition-colors flex items-center gap-1"
@@ -800,6 +830,13 @@ export default function AccountPage() {
           </div>
         </div>
       )}
+
+      {/* Pickup Pass Modal */}
+      <PickupPassModal
+        isOpen={!!selectedPass}
+        onClose={() => setSelectedPass(null)}
+        pass={selectedPass}
+      />
     </div>
   );
 }

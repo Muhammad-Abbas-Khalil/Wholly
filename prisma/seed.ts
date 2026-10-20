@@ -74,6 +74,7 @@ async function main() {
       unit: '5 L tin',
       category: 'Cooking Oil',
       imageUrl: '/products/dalda-cooking-oil.jpg',
+      retailPrice: 3000,
     },
   });
 
@@ -85,6 +86,7 @@ async function main() {
       unit: '10 kg bag',
       category: 'Rice & Grains',
       imageUrl: '/products/guard-basmati-rice.png',
+      retailPrice: 4200,
     },
   });
 
@@ -96,6 +98,7 @@ async function main() {
       unit: '900g pack',
       category: 'Tea & Beverages',
       imageUrl: '/products/tapal-danedar-tea.jpg',
+      retailPrice: 1650,
     },
   });
 
@@ -107,6 +110,7 @@ async function main() {
       unit: '5 kg bag',
       category: 'Sugar & Sweeteners',
       imageUrl: '/products/white-sugar.jpg',
+      retailPrice: 800,
     },
   });
 
@@ -118,6 +122,7 @@ async function main() {
       unit: '10 kg bag',
       category: 'Flour & Grains',
       imageUrl: '/products/sunridge-chakki-atta.jpg',
+      retailPrice: 1550,
     },
   });
 
@@ -129,13 +134,14 @@ async function main() {
       unit: 'Carton (12 x 1L)',
       category: 'Dairy & Breakfast',
       imageUrl: '/products/olpers-milk-carton.jpg',
+      retailPrice: 3840,
     },
   });
 
   console.log('📦 Created Products (6 staple grocery categories).');
 
   // 3. Create Deals
-  // Deal 1: Dalda Oil - ACTIVE, 14 units claimed (6 more to unlock 2,700 PKR)
+  // Deal 1: Dalda Oil - ACTIVE & UNLOCKED, 14 units claimed (min 10 reached! 6 more to unlock 2,700 PKR)
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const fiveDaysLater = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
@@ -149,11 +155,11 @@ async function main() {
       deadline: threeDaysLater,
       maxPerUser: 50,
       tokenPerUnit: 150,
+      retailPrice: 3000,
       pickupLocation: 'Community Center / Mosque Parking, Block D, Model Town, Lahore',
       pickupTime: 'Saturday 4:00 PM - 7:00 PM',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 3000, supplierCostPerUnit: 2600 },
           { minUnits: 10, pricePerUnit: 2850, supplierCostPerUnit: 2550 },
           { minUnits: 20, pricePerUnit: 2700, supplierCostPerUnit: 2500 },
         ],
@@ -164,15 +170,15 @@ async function main() {
   // Add participations to Dalda Oil deal: 14 units claimed
   await prisma.participation.createMany({
     data: [
-      { dealId: oilDeal.id, userId: buyer1.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: oilDeal.id, userId: buyer2.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: oilDeal.id, userId: buyer3.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: oilDeal.id, userId: buyer4.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: oilDeal.id, userId: admin.id, quantity: 2, status: ParticipationStatus.RESERVED },
+      { dealId: oilDeal.id, userId: buyer1.id, quantity: 3, depositPaid: Math.round(2850 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: oilDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(2850 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+      { dealId: oilDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(2850 * 3 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
+      { dealId: oilDeal.id, userId: buyer4.id, quantity: 3, depositPaid: Math.round(2850 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: oilDeal.id, userId: admin.id, quantity: 2, depositPaid: Math.round(2850 * 2 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
     ],
   });
 
-  // Deal 2: Guard Basmati Rice - ACTIVE, 6 units claimed
+  // Deal 2: Guard Basmati Rice - ACTIVE & LOCKED, 6 units claimed (needs 4 more to unlock!)
   const riceDeal = await prisma.deal.create({
     data: {
       productId: rice.id,
@@ -181,11 +187,11 @@ async function main() {
       deadline: fiveDaysLater,
       maxPerUser: 50,
       tokenPerUnit: 150,
+      retailPrice: 4200,
       pickupLocation: 'Wholly Hub @ Boat Basin, Block 5, Clifton, Karachi',
       pickupTime: 'Sunday 11:00 AM - 3:00 PM',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 4200, supplierCostPerUnit: 3700 },
           { minUnits: 10, pricePerUnit: 3900, supplierCostPerUnit: 3500 },
           { minUnits: 25, pricePerUnit: 3600, supplierCostPerUnit: 3300 },
         ],
@@ -195,13 +201,13 @@ async function main() {
 
   await prisma.participation.createMany({
     data: [
-      { dealId: riceDeal.id, userId: buyer1.id, quantity: 2, status: ParticipationStatus.RESERVED },
-      { dealId: riceDeal.id, userId: buyer2.id, quantity: 2, status: ParticipationStatus.RESERVED },
-      { dealId: riceDeal.id, userId: buyer3.id, quantity: 2, status: ParticipationStatus.RESERVED },
+      { dealId: riceDeal.id, userId: buyer1.id, quantity: 2, depositPaid: Math.round(3900 * 2 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: riceDeal.id, userId: buyer2.id, quantity: 2, depositPaid: Math.round(3900 * 2 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+      { dealId: riceDeal.id, userId: buyer3.id, quantity: 2, depositPaid: Math.round(3900 * 2 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
     ],
   });
 
-  // Deal 3: Mezan Tea - ACTIVE, 21 units claimed (highest tier unlocked!)
+  // Deal 3: Tapal Danedar Tea - ACTIVE & UNLOCKED, 21 units claimed (highest tier reached!)
   const teaDeal = await prisma.deal.create({
     data: {
       productId: tea.id,
@@ -210,11 +216,11 @@ async function main() {
       deadline: oneWeekLater,
       maxPerUser: 50,
       tokenPerUnit: 150,
+      retailPrice: 1650,
       pickupLocation: 'Wholly Pickup Point, Street 5, F-7/2, Islamabad',
       pickupTime: 'Friday 3:00 PM - 6:00 PM',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 1650, supplierCostPerUnit: 1400 },
           { minUnits: 10, pricePerUnit: 1500, supplierCostPerUnit: 1300 },
           { minUnits: 20, pricePerUnit: 1350, supplierCostPerUnit: 1200 },
         ],
@@ -224,11 +230,11 @@ async function main() {
 
   await prisma.participation.createMany({
     data: [
-      { dealId: teaDeal.id, userId: buyer1.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: teaDeal.id, userId: buyer2.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: teaDeal.id, userId: buyer3.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: teaDeal.id, userId: buyer4.id, quantity: 3, status: ParticipationStatus.RESERVED },
-      { dealId: teaDeal.id, userId: admin.id, quantity: 3, status: ParticipationStatus.RESERVED },
+      { dealId: teaDeal.id, userId: buyer1.id, quantity: 3, depositPaid: Math.round(1500 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: teaDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(1500 * 3 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
+      { dealId: teaDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(1500 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+      { dealId: teaDeal.id, userId: buyer4.id, quantity: 3, depositPaid: Math.round(1500 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: teaDeal.id, userId: admin.id, quantity: 3, depositPaid: Math.round(1500 * 3 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
     ],
   });
 
@@ -242,11 +248,11 @@ async function main() {
       deadline: pastDate,
       maxPerUser: 50,
       tokenPerUnit: 150,
+      retailPrice: 800,
       pickupLocation: 'Wholly Hub @ Phase 4 Commercial, DHA, Lahore',
       pickupTime: 'Completed on Wednesday',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 800, supplierCostPerUnit: 720 },
           { minUnits: 15, pricePerUnit: 740, supplierCostPerUnit: 680 },
           { minUnits: 30, pricePerUnit: 690, supplierCostPerUnit: 640 },
         ],
@@ -256,13 +262,13 @@ async function main() {
 
   await prisma.participation.createMany({
     data: [
-      { dealId: sugarDeal.id, userId: buyer1.id, quantity: 3, depositPaid: 720, paymentMethod: 'CARD', status: ParticipationStatus.COLLECTED },
-      { dealId: sugarDeal.id, userId: buyer2.id, quantity: 3, depositPaid: 720, paymentMethod: 'JAZZCASH', status: ParticipationStatus.COLLECTED },
-      { dealId: sugarDeal.id, userId: buyer3.id, quantity: 2, depositPaid: 480, paymentMethod: 'EASYPAISA', status: ParticipationStatus.NO_SHOW },
+      { dealId: sugarDeal.id, userId: buyer1.id, quantity: 3, depositPaid: 666, paymentMethod: 'CARD', status: ParticipationStatus.COLLECTED },
+      { dealId: sugarDeal.id, userId: buyer2.id, quantity: 3, depositPaid: 666, paymentMethod: 'JAZZCASH', status: ParticipationStatus.COLLECTED },
+      { dealId: sugarDeal.id, userId: buyer3.id, quantity: 2, depositPaid: 444, paymentMethod: 'EASYPAISA', status: ParticipationStatus.NO_SHOW },
     ],
   });
 
-  // Deal 5: Sunridge Fortified Chakki Atta - ACTIVE, 11 units claimed (close to 2nd tier!)
+  // Deal 5: Sunridge Fortified Chakki Atta - ACTIVE & UNLOCKED, 11 units claimed (min 10 reached!)
   const fourDaysLater = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
   const attaDeal = await prisma.deal.create({
     data: {
@@ -272,11 +278,11 @@ async function main() {
       deadline: fourDaysLater,
       maxPerUser: 100,
       tokenPerUnit: 150,
+      retailPrice: 1550,
       pickupLocation: 'Wholly Hub @ Jamrud Road, University Town, Peshawar',
       pickupTime: 'Sunday 2:00 PM - 6:00 PM',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 1550, supplierCostPerUnit: 1350 },
           { minUnits: 10, pricePerUnit: 1420, supplierCostPerUnit: 1290 },
           { minUnits: 25, pricePerUnit: 1320, supplierCostPerUnit: 1220 },
         ],
@@ -293,7 +299,7 @@ async function main() {
     ],
   });
 
-  // Deal 6: Olper's Milk - ACTIVE, 8 units claimed (needs 2 more for 10-unit tier)
+  // Deal 6: Olper's Milk - ACTIVE & LOCKED, 8 units claimed (needs 2 more for 10-unit tier!)
   const sixDaysLater = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
   const milkDeal = await prisma.deal.create({
     data: {
@@ -303,11 +309,11 @@ async function main() {
       deadline: sixDaysLater,
       maxPerUser: 100,
       tokenPerUnit: 150,
+      retailPrice: 3840,
       pickupLocation: 'Wholly Hub @ Main University Road, Gulshan-e-Iqbal, Karachi',
       pickupTime: 'Saturday 11:00 AM - 3:00 PM',
       tiers: {
         create: [
-          { minUnits: 1, pricePerUnit: 3840, supplierCostPerUnit: 3400 },
           { minUnits: 10, pricePerUnit: 3480, supplierCostPerUnit: 3150 },
           { minUnits: 20, pricePerUnit: 3240, supplierCostPerUnit: 2950 },
         ],
@@ -317,9 +323,9 @@ async function main() {
 
   await prisma.participation.createMany({
     data: [
-      { dealId: milkDeal.id, userId: buyer1.id, quantity: 2, depositPaid: Math.round(3840 * 2 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
-      { dealId: milkDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(3840 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
-      { dealId: milkDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(3840 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
+      { dealId: milkDeal.id, userId: buyer1.id, quantity: 2, depositPaid: Math.round(3480 * 2 * 0.30), paymentMethod: 'CARD', status: ParticipationStatus.RESERVED },
+      { dealId: milkDeal.id, userId: buyer2.id, quantity: 3, depositPaid: Math.round(3480 * 3 * 0.30), paymentMethod: 'JAZZCASH', status: ParticipationStatus.RESERVED },
+      { dealId: milkDeal.id, userId: buyer3.id, quantity: 3, depositPaid: Math.round(3480 * 3 * 0.30), paymentMethod: 'EASYPAISA', status: ParticipationStatus.RESERVED },
     ],
   });
 

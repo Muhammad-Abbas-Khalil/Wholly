@@ -38,15 +38,12 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
           <div className="flex items-center gap-6 sm:gap-8">
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center group">
               <img
                 src="/logo.png"
                 alt="Wholly - Buy Together, Pay Wholesale"
                 className="h-10 sm:h-11 w-auto object-contain group-hover:scale-105 transition-transform"
               />
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
-                PK
-              </span>
             </Link>
 
             {/* Desktop Navigation Links */}

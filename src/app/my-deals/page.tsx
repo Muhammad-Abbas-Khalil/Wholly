@@ -16,13 +16,17 @@ import {
   CreditCard,
   Check,
   RotateCcw,
+  QrCode,
 } from 'lucide-react';
+import { formatReservedUnits, getPickupCode } from '@/lib/pricing';
+import PickupPassModal from '@/components/PickupPassModal';
 
 export default function MyDealsPage() {
   const { data: session, status } = useSession();
   const [participations, setParticipations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'COLLECTED'>('ACTIVE');
+  const [selectedPass, setSelectedPass] = useState<any | null>(null);
 
   useEffect(() => {
     if (session?.user) {
@@ -227,6 +231,11 @@ export default function MyDealsPage() {
                       >
                         {isCollected ? 'Collected ✓' : `Pool Status: ${deal.status}`}
                       </span>
+
+                      <span className="font-mono text-xs font-black text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                        <QrCode className="w-3 h-3 text-emerald-700" />
+                        {getPickupCode(item.participationId)}
+                      </span>
                     </div>
 
                     <h3 className="text-base font-bold text-gray-900">{deal.product?.name}</h3>
@@ -249,7 +258,7 @@ export default function MyDealsPage() {
                 <div className="w-full md:w-auto flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end justify-between border-t md:border-t-0 pt-4 md:pt-0 border-gray-100 gap-3">
                   <div className="text-left md:text-right space-y-0.5">
                     <span className="text-xs font-semibold text-slate-700 block">
-                      Reserved: <strong className="text-gray-900 font-bold">{item.quantity} {deal.product?.unit}</strong>
+                      Reserved: <strong className="text-gray-900 font-bold">{formatReservedUnits(item.quantity, deal.product?.unit)}</strong>
                     </span>
                     <span className="text-xs text-slate-600 font-medium block">
                       @ PKR {deal.unitPrice?.toLocaleString()} / unit (Total: PKR {deal.totalCost?.toLocaleString()})
@@ -271,7 +280,33 @@ export default function MyDealsPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1 self-stretch sm:self-auto justify-end">
+                  <div className="flex flex-wrap items-center gap-2 pt-1 self-stretch sm:self-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPass({
+                          pickupCode: getPickupCode(item.participationId),
+                          participationId: item.participationId,
+                          buyerName: session?.user?.name || undefined,
+                          buyerPhone: session?.user?.phone || undefined,
+                          productName: deal.product?.name,
+                          productImage: deal.product?.imageUrl,
+                          productCategory: deal.product?.category,
+                          units: formatReservedUnits(item.quantity, deal.product?.unit),
+                          depositPaid: item.depositPaid || 0,
+                          paymentMethod: item.paymentMethod,
+                          balanceDue: item.balanceDue || Math.max(0, deal.totalCost - (item.depositPaid || 0)),
+                          pickupLocation: deal.pickupLocation,
+                          pickupTime: deal.pickupTime,
+                          status: item.status,
+                        })
+                      }
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-950 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-emerald-700" />
+                      Pickup Pass & QR
+                    </button>
+
                     {isCollected ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Collected
@@ -295,6 +330,13 @@ export default function MyDealsPage() {
           })}
         </div>
       )}
+
+      {/* Pickup Pass Ticket Modal */}
+      <PickupPassModal
+        isOpen={!!selectedPass}
+        onClose={() => setSelectedPass(null)}
+        pass={selectedPass}
+      />
     </div>
   );
 }

@@ -23,8 +23,27 @@ import {
   X,
   ArrowRight,
   Plus,
+  Lock,
+  Unlock,
+  QrCode,
+  Fingerprint,
+  Wifi,
+  Battery,
+  Check,
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatReservedUnits, getPickupCode } from '@/lib/pricing';
+import PickupPassModal from '@/components/PickupPassModal';
+
+const DEMO_EASYPAISA_ACCOUNTS = [
+  { label: 'Usman (Telenor Rwp)', num: '0345-9876543' },
+  { label: 'Bilal (Ufone Pesh)', num: '0333-5551234' },
+];
+
+const DEMO_CARD_PRESETS = [
+  { label: 'Visa Demo', num: '4242 •••• •••• 4242', exp: '12/28', cvc: '888', name: 'Abbas Khan' },
+  { label: 'PayPak Pak Demo', num: '6011 •••• •••• 1234', exp: '11/27', cvc: '123', name: 'Hina Aslam' },
+];
 
 export default function DealDetailPage() {
   const params = useParams();
@@ -36,11 +55,8 @@ export default function DealDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [additionalUnits, setAdditionalUnits] = useState<number>(1);
-  const [paymentMethod, setPaymentMethod] = useState<'JAZZCASH' | 'EASYPAISA' | 'CARD'>('JAZZCASH');
-  const [jazzcashNumber, setJazzcashNumber] = useState<string>('0321-1234567');
-  const [jazzcashMpin, setJazzcashMpin] = useState<string>('1234');
+  const [paymentMethod, setPaymentMethod] = useState<'EASYPAISA' | 'CARD'>('EASYPAISA');
   const [easypaisaNumber, setEasypaisaNumber] = useState<string>('0345-9876543');
-  const [easypaisaPin, setEasypaisaPin] = useState<string>('12345');
   const [cardNumber, setCardNumber] = useState<string>('4242 •••• •••• 4242');
   const [cardExpiry, setCardExpiry] = useState<string>('12/28');
   const [cardCvc, setCardCvc] = useState<string>('888');
@@ -51,7 +67,19 @@ export default function DealDetailPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [showPassModal, setShowPassModal] = useState<boolean>(false);
+  const [showPhonePromptModal, setShowPhonePromptModal] = useState<boolean>(false);
+  const [isPhoneSimulating, setIsPhoneSimulating] = useState<boolean>(false);
+  const [phonePromptData, setPhonePromptData] = useState<{
+    method: 'EASYPAISA';
+    phoneNumber: string;
+    depositAmount: number;
+    units: number;
+    productName: string;
+    isUpdate: boolean;
+  } | null>(null);
   const [confirmDetails, setConfirmDetails] = useState<{
+    participationId?: string;
     isUpdate: boolean;
     totalQuantity: number;
     additionalUnits?: number;
@@ -109,12 +137,7 @@ export default function DealDetailPage() {
     return () => clearInterval(interval);
   }, [deal?.deadline]);
 
-  const handleJoin = async () => {
-    if (!session?.user) {
-      router.push(`/login?callbackUrl=/deals/${dealId}`);
-      return;
-    }
-
+  const executeJoin = async (): Promise<boolean> => {
     setIsSubmitting(true);
     setPaymentProcessing(true);
     setActionError(null);
@@ -157,19 +180,16 @@ export default function DealDetailPage() {
 
       if (!res.ok) {
         setActionError(data.error || 'Failed to update reservation');
+        return false;
       } else {
-        const methodLabel =
-          paymentMethod === 'JAZZCASH'
-            ? 'JazzCash'
-            : paymentMethod === 'EASYPAISA'
-            ? 'Easypaisa'
-            : 'Credit/Debit Card';
+        const methodLabel = paymentMethod === 'EASYPAISA' ? 'Easypaisa' : 'Debit/Credit Card';
 
         const finalTotalQty = data.participation?.quantity || (isJoined ? deal.userParticipation.quantity + additionalUnits : selectedQuantity);
         const finalDepositPaid = data.participation?.depositPaid || (isJoined ? (deal.userParticipation.depositPaid || 0) + calculatedDeposit : calculatedDeposit);
         const balanceDue = Math.max(0, (deal.currentPrice * finalTotalQty) - finalDepositPaid);
 
         setConfirmDetails({
+          participationId: data.participation?.id || deal.userParticipation?.id,
           isUpdate: !!data.isUpdate || isJoined,
           totalQuantity: finalTotalQty,
           additionalUnits: data.additionalUnits || additionalUnits,
@@ -192,12 +212,44 @@ export default function DealDetailPage() {
         }
 
         await fetchDealDetail();
+        return true;
       }
     } catch {
       setActionError('An error occurred. Please try again.');
+      return false;
     } finally {
       setIsSubmitting(false);
       setPaymentProcessing(false);
+    }
+  };
+
+  const handleInitiatePayment = (depositAmount: number, isAddingUnits: boolean) => {
+    if (!session?.user) {
+      router.push(`/login?callbackUrl=/deals/${dealId}`);
+      return;
+    }
+
+    if (paymentMethod === 'CARD') {
+      executeJoin();
+    } else {
+      setPhonePromptData({
+        method: 'EASYPAISA',
+        phoneNumber: easypaisaNumber,
+        depositAmount,
+        units: isAddingUnits ? additionalUnits : selectedQuantity,
+        productName: deal.product.name,
+        isUpdate: isAddingUnits,
+      });
+      setShowPhonePromptModal(true);
+    }
+  };
+
+  const handlePhoneApproval = async () => {
+    setIsPhoneSimulating(true);
+    const success = await executeJoin();
+    setIsPhoneSimulating(false);
+    if (success) {
+      setShowPhonePromptModal(false);
     }
   };
 
@@ -252,6 +304,9 @@ export default function DealDetailPage() {
   const isUserJoined = !!deal.userParticipation && deal.userParticipation.status !== 'CANCELLED';
   const isDealOpen = deal.status === 'OPEN';
   const isPastDeadline = new Date() >= new Date(deal.deadline);
+  const minRequired = (deal as any).minUnitsRequired ?? deal.tiers[0]?.minUnits ?? 1;
+  const isUnlocked = (deal as any).isUnlocked !== undefined ? (deal as any).isUnlocked : deal.unitsClaimed >= minRequired;
+  const unitsNeeded = Math.max(0, minRequired - deal.unitsClaimed);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -270,13 +325,13 @@ export default function DealDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 sm:p-8">
           {/* Product Image Column */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
+            <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100/70 border border-slate-200/80 p-6 flex items-center justify-center">
               <img
                 src={deal.product.imageUrl}
                 alt={deal.product.name}
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-contain object-center drop-shadow-sm"
               />
-              <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs">
+              <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs border border-gray-100">
                 {deal.product.category}
               </span>
             </div>
@@ -308,9 +363,27 @@ export default function DealDetailPage() {
                   Unit: {deal.product.unit}
                 </span>
 
-                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  {isDealOpen ? timeLeft : deal.status}
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md shadow-xs ${
+                      !isUnlocked && isDealOpen
+                        ? 'bg-amber-50 text-amber-900 border-amber-300'
+                        : isUnlocked && isDealOpen
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-gray-100 text-gray-700 border-gray-300'
+                    }`}
+                  >
+                    {!isUnlocked && isDealOpen
+                      ? `🔒 Locked (${unitsNeeded} to activate)`
+                      : isUnlocked && isDealOpen
+                      ? '🔓 Unlocked'
+                      : deal.status}
+                  </span>
+
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    {isDealOpen ? timeLeft : deal.status}
+                  </div>
                 </div>
               </div>
 
@@ -323,14 +396,28 @@ export default function DealDetailPage() {
               </p>
 
               {/* Price Banner */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-between">
+              <div
+                className={`p-4 rounded-2xl border flex items-center justify-between ${
+                  !isUnlocked && isDealOpen
+                    ? 'bg-gradient-to-r from-amber-50/80 to-orange-50/50 border-amber-200'
+                    : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-100'
+                }`}
+              >
                 <div>
-                  <span className="text-xs font-bold text-emerald-800 block">Current Pool Price</span>
+                  <span
+                    className={`text-xs font-bold block ${
+                      !isUnlocked && isDealOpen ? 'text-amber-800' : 'text-emerald-800'
+                    }`}
+                  >
+                    {!isUnlocked && isDealOpen
+                      ? `Target Wholesale Price (Unlocks at ${minRequired} units)`
+                      : 'Active Wholesale Price'}
+                  </span>
                   <div className="flex items-baseline gap-2 mt-0.5">
                     <span className="text-3xl font-black text-gray-900">
                       PKR {deal.currentPrice.toLocaleString()}
                     </span>
-                    {deal.savings.savingsPerUnit > 0 && (
+                    {deal.basePrice > deal.currentPrice && (
                       <span className="text-sm font-semibold text-gray-400 line-through">
                         PKR {deal.basePrice.toLocaleString()}
                       </span>
@@ -338,17 +425,45 @@ export default function DealDetailPage() {
                   </div>
                 </div>
 
-                {deal.savings.savingsPerUnit > 0 && (
-                  <div className="text-right">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
-                      Save {deal.savings.percentage}%
-                    </span>
-                    <p className="text-[11px] text-emerald-700 font-medium mt-1">
-                      -PKR {deal.savings.savingsPerUnit.toLocaleString()} / unit
-                    </p>
-                  </div>
-                )}
+                <div className="text-right">
+                  {isUnlocked && deal.savings.savingsPerUnit > 0 ? (
+                    <>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                        Save {deal.savings.percentage}%
+                      </span>
+                      <p className="text-[11px] text-emerald-700 font-medium mt-1">
+                        -PKR {deal.savings.savingsPerUnit.toLocaleString()} / unit
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                        🔒 Needs {unitsNeeded} more
+                      </span>
+                      <p className="text-[11px] text-amber-800 font-medium mt-1">
+                        Save PKR {(deal.basePrice - deal.currentPrice).toLocaleString()} / unit
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Locked Explanation Notice */}
+              {!isUnlocked && isDealOpen && (
+                <div className="p-3.5 rounded-xl bg-amber-50/90 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5 shadow-2xs">
+                  <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold block">Wholesale Discount Pending Minimum Activation</span>
+                    <span className="text-amber-800 leading-relaxed block">
+                      This factory deal unlocks for everyone once <strong>{minRequired} total units</strong> are pooled. Currently <strong>{deal.unitsClaimed} units</strong> reserved — only <strong>{unitsNeeded} more needed</strong> before the pool closes!
+                    </span>
+                    <div className="pt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1 rounded-lg border border-emerald-300">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span>100% Deposit Security: If this deal does not unlock before deadline, your 30% advance is fully refunded automatically.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Hero Progress Bar */}
               <div className="pt-2">
@@ -396,154 +511,163 @@ export default function DealDetailPage() {
                   {/* Common Payment Selector Component */}
                   {(() => {
                     const renderPaymentTabs = (depositLabel: string, depositAmount: number) => (
-                      <div className="pt-3 border-t border-slate-100 space-y-3">
+                      <div className="pt-3 border-t border-slate-200/80 space-y-3">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-slate-900">
+                          <label className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
                             Pay {depositLabel} (PKR {depositAmount.toLocaleString()}) Via:
                           </label>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            Simulated Demo Gateway
+                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                            Demo Gateway
                           </span>
                         </div>
 
-                        {/* 3 Payment Tabs */}
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod('JAZZCASH')}
-                            className={`p-2.5 rounded-xl font-bold flex flex-col items-center justify-center gap-1 border transition-all ${
-                              paymentMethod === 'JAZZCASH'
-                                ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
-                                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            <Smartphone className="w-4 h-4 text-red-600" />
-                            <span>JazzCash</span>
-                          </button>
-
+                        {/* 2 Clean Payment Selector Tabs: Easypaisa & Card */}
+                        <div className="grid grid-cols-2 gap-2.5 text-xs">
+                          {/* Easypaisa Tab */}
                           <button
                             type="button"
                             onClick={() => setPaymentMethod('EASYPAISA')}
-                            className={`p-2.5 rounded-xl font-bold flex flex-col items-center justify-center gap-1 border transition-all ${
+                            className={`p-3 rounded-2xl font-bold flex items-center justify-center gap-2 border transition-all ${
                               paymentMethod === 'EASYPAISA'
                                 ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
-                                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            <Smartphone className="w-4 h-4 text-emerald-600" />
-                            <span>Easypaisa</span>
+                            <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shadow-2xs">
+                              EP
+                            </div>
+                            <div className="text-left">
+                              <div className="font-black text-xs leading-none">Easypaisa</div>
+                              <span className="text-[10px] text-emerald-700 font-semibold">Mobile Wallet</span>
+                            </div>
                           </button>
 
+                          {/* Debit/Credit Card Tab */}
                           <button
                             type="button"
                             onClick={() => setPaymentMethod('CARD')}
-                            className={`p-2.5 rounded-xl font-bold flex flex-col items-center justify-center gap-1 border transition-all ${
+                            className={`p-3 rounded-2xl font-bold flex items-center justify-center gap-2 border transition-all ${
                               paymentMethod === 'CARD'
-                                ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
-                                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                                ? 'border-indigo-600 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-500/20 shadow-xs'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            <CreditCard className="w-4 h-4 text-blue-600" />
-                            <span>Card</span>
+                            <CreditCard className="w-5 h-5 text-indigo-600" />
+                            <div className="text-left">
+                              <div className="font-black text-xs leading-none">Debit / Credit</div>
+                              <span className="text-[10px] text-indigo-700 font-semibold">Visa / PayPak</span>
+                            </div>
                           </button>
                         </div>
 
-                        {/* Dummy Interactive Checkout Inputs */}
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
-                          {paymentMethod === 'JAZZCASH' && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                                <span>JazzCash Account Number</span>
-                                <span className="text-emerald-700 text-[10px] font-bold">✓ Pre-filled test account</span>
-                              </div>
-                              <input
-                                type="text"
-                                value={jazzcashNumber}
-                                onChange={(e) => setJazzcashNumber(e.target.value)}
-                                placeholder="0321-1234567"
-                                className="w-full p-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 font-semibold text-xs outline-none focus:border-emerald-500"
-                              />
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="password"
-                                  maxLength={4}
-                                  value={jazzcashMpin}
-                                  onChange={(e) => setJazzcashMpin(e.target.value)}
-                                  placeholder="MPIN"
-                                  className="w-28 p-2 rounded-lg border border-slate-300 bg-white text-slate-900 font-mono text-center tracking-widest text-xs outline-none focus:border-emerald-500"
-                                />
-                                <span className="text-[11px] text-slate-500">Demo 4-digit MPIN (Simulated)</span>
-                              </div>
-                            </div>
-                          )}
-
+                        {/* Clean Payment Form Card */}
+                        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3 text-xs">
+                          {/* EASYPAISA FORM */}
                           {paymentMethod === 'EASYPAISA' && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                                <span>Easypaisa Mobile Number</span>
-                                <span className="text-emerald-700 text-[10px] font-bold">✓ Pre-filled test account</span>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold text-slate-700">Easypaisa Mobile Number:</label>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-slate-400">Demo Fill:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEasypaisaNumber('0345-9876543')}
+                                    className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                  >
+                                    0345-9876543
+                                  </button>
+                                </div>
                               </div>
-                              <input
-                                type="text"
-                                value={easypaisaNumber}
-                                onChange={(e) => setEasypaisaNumber(e.target.value)}
-                                placeholder="0345-9876543"
-                                className="w-full p-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 font-semibold text-xs outline-none focus:border-emerald-500"
-                              />
-                              <div className="flex items-center gap-2">
+
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 font-bold text-xs">
+                                  🇵🇰 +92
+                                </div>
                                 <input
-                                  type="password"
-                                  maxLength={5}
-                                  value={easypaisaPin}
-                                  onChange={(e) => setEasypaisaPin(e.target.value)}
-                                  placeholder="PIN"
-                                  className="w-28 p-2 rounded-lg border border-slate-300 bg-white text-slate-900 font-mono text-center tracking-widest text-xs outline-none focus:border-emerald-500"
+                                  type="text"
+                                  value={easypaisaNumber}
+                                  onChange={(e) => setEasypaisaNumber(e.target.value)}
+                                  placeholder="0345-9876543"
+                                  className="w-full pl-16 pr-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono font-bold text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                                 />
-                                <span className="text-[11px] text-slate-500">Demo 5-digit PIN (Simulated)</span>
+                              </div>
+
+                              <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-950 flex items-center gap-2">
+                                <Smartphone className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <span className="text-emerald-800 text-[10.5px]">
+                                  No PIN required on this website. A simulated mobile push prompt will be sent to your phone for 1-click approval.
+                                </span>
                               </div>
                             </div>
                           )}
 
+                          {/* CARD FORM */}
                           {paymentMethod === 'CARD' && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                                <span>Credit / Debit Card</span>
-                                <span className="text-emerald-700 text-[10px] font-bold">✓ Pre-filled test card</span>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold text-slate-700">Card Information:</label>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-slate-400">Demo Fill:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCardNumber('4242 •••• •••• 4242');
+                                      setCardExpiry('12/28');
+                                      setCardCvc('888');
+                                      setCardName('Abbas Khan');
+                                    }}
+                                    className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                                  >
+                                    Visa 4242
+                                  </button>
+                                </div>
                               </div>
-                              <input
-                                type="text"
-                                value={cardNumber}
-                                onChange={(e) => setCardNumber(e.target.value)}
-                                placeholder="4242 •••• •••• 4242"
-                                className="w-full p-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 font-mono font-semibold text-xs outline-none focus:border-emerald-500"
-                              />
-                              <div className="grid grid-cols-3 gap-2">
-                                <input
-                                  type="text"
-                                  value={cardExpiry}
-                                  onChange={(e) => setCardExpiry(e.target.value)}
-                                  placeholder="MM/YY"
-                                  className="p-2 rounded-lg border border-slate-300 bg-white text-slate-900 font-mono text-center text-xs outline-none focus:border-emerald-500"
-                                />
-                                <input
-                                  type="password"
-                                  maxLength={4}
-                                  value={cardCvc}
-                                  onChange={(e) => setCardCvc(e.target.value)}
-                                  placeholder="CVC"
-                                  className="p-2 rounded-lg border border-slate-300 bg-white text-slate-900 font-mono text-center text-xs outline-none focus:border-emerald-500"
-                                />
-                                <input
-                                  type="text"
-                                  value={cardName}
-                                  onChange={(e) => setCardName(e.target.value)}
-                                  placeholder="Cardholder"
-                                  className="p-2 rounded-lg border border-slate-300 bg-white text-slate-900 text-xs font-semibold outline-none focus:border-emerald-500"
-                                />
+
+                              <div className="space-y-2">
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={cardNumber}
+                                    onChange={(e) => setCardNumber(e.target.value)}
+                                    placeholder="4242 •••• •••• 4242"
+                                    className="w-full pl-3 pr-24 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono font-bold text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                  />
+                                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[10px] font-bold text-slate-400">
+                                    Visa / PayPak
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                  <input
+                                    type="text"
+                                    value={cardExpiry}
+                                    onChange={(e) => setCardExpiry(e.target.value)}
+                                    placeholder="MM/YY"
+                                    className="p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono text-center font-bold text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                  />
+                                  <input
+                                    type="text"
+                                    maxLength={4}
+                                    value={cardCvc}
+                                    onChange={(e) => setCardCvc(e.target.value)}
+                                    placeholder="CVC"
+                                    className="p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono text-center font-bold text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={cardName}
+                                    onChange={(e) => setCardName(e.target.value)}
+                                    placeholder="Cardholder"
+                                    className="p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                  />
+                                </div>
+
+                                <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 pt-0.5">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <span>Secured by 256-bit TLS encryption with 3D Secure verification.</span>
+                                </div>
                               </div>
-                              <p className="text-[10px] text-slate-500">
-                                Accepts Visa, Mastercard, UnionPay & PayPak. Demo simulated flow.
-                              </p>
                             </div>
                           )}
                         </div>
@@ -569,7 +693,7 @@ export default function DealDetailPage() {
                                 Order Confirmed & Active
                               </span>
                               <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-xs">
-                                {userUnits} {deal.product.unit} Reserved
+                                {formatReservedUnits(userUnits, deal.product.unit)} Reserved
                               </span>
                             </div>
 
@@ -597,6 +721,21 @@ export default function DealDetailPage() {
                                   Pay upon collection
                                 </span>
                               </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-emerald-100 flex items-center justify-between">
+                              <span className="font-mono text-xs font-black text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+                                <QrCode className="w-3.5 h-3.5 text-emerald-700" />
+                                Pass: {getPickupCode(deal.userParticipation.id)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowPassModal(true)}
+                                className="px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition-colors flex items-center gap-1.5"
+                              >
+                                <QrCode className="w-3.5 h-3.5" />
+                                View Pickup Pass & QR
+                              </button>
                             </div>
                           </div>
 
@@ -670,7 +809,7 @@ export default function DealDetailPage() {
                             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
                               <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
                                 <span className="font-semibold text-slate-600">Extra Units to Add:</span>
-                                <span className="font-black text-slate-900">+{additionalUnits} {deal.product.unit}</span>
+                                <span className="font-black text-slate-900">+{formatReservedUnits(additionalUnits, deal.product.unit)}</span>
                               </div>
 
                               <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80 text-emerald-800">
@@ -681,7 +820,7 @@ export default function DealDetailPage() {
                               <div className="flex items-center justify-between text-slate-700 pt-0.5">
                                 <span className="font-medium">New Total Order:</span>
                                 <span className="font-black text-slate-900">
-                                  {newTotalQty} {deal.product.unit} (New Cash on Pickup: PKR {newBalanceDue.toLocaleString()})
+                                  {formatReservedUnits(newTotalQty, deal.product.unit)} (New Cash on Pickup: PKR {newBalanceDue.toLocaleString()})
                                 </span>
                               </div>
                             </div>
@@ -693,7 +832,7 @@ export default function DealDetailPage() {
                           {/* Action Button for Adding Units */}
                           <div className="flex items-center gap-3 pt-1">
                             <button
-                              onClick={handleJoin}
+                              onClick={() => handleInitiatePayment(extraDeposit, true)}
                               disabled={isSubmitting || paymentProcessing}
                               className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 disabled:opacity-75 disabled:hover:scale-100"
                             >
@@ -707,7 +846,9 @@ export default function DealDetailPage() {
                               ) : isSubmitting ? (
                                 'Updating...'
                               ) : (
-                                `Pay 30% Deposit (PKR ${extraDeposit.toLocaleString()}) & Add ${additionalUnits} Extra Unit(s)`
+                                `Pay 30% Deposit (PKR ${extraDeposit.toLocaleString()}) via ${
+                                  paymentMethod === 'CARD' ? 'Card' : 'Easypaisa Push'
+                                } & Add ${additionalUnits} Extra Unit(s)`
                               )}
                             </button>
 
@@ -830,21 +971,26 @@ export default function DealDetailPage() {
                           {renderPaymentTabs('30% Advance Deposit', advanceDeposit)}
                         </div>
 
-                        {/* Advance Commitment Guarantee Notice */}
-                        <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-950 space-y-1">
-                          <span className="font-bold flex items-center gap-1.5 text-emerald-900">
-                            <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                            Advance Commitment Guarantee:
-                          </span>
+                        {/* Advance Commitment & 100% Refund Guarantee Notice */}
+                        <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-[11px] text-emerald-950 space-y-1.5 shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold flex items-center gap-1.5 text-emerald-900 text-xs">
+                              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                              100% Advance Protection & Refund Guarantee
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900 border border-emerald-300">
+                              Zero Risk
+                            </span>
+                          </div>
                           <p className="text-emerald-800 leading-relaxed font-medium">
-                            Your 30% advance deposit secures bulk inventory with local wholesale millers and suppliers. The remaining 70% is payable in cash when you inspect and collect your items at pickup. Once group wholesale tiers are unlocked, orders are committed to protect wholesale rates for all neighbors.
+                            Your 30% advance deposit is safely secured in escrow. <strong>If the deal does not unlock before the deadline, you will receive a 100% automatic refund</strong> to your {paymentMethod === 'CARD' ? 'Card' : paymentMethod} account with zero deductions. Once unlocked, the remaining 70% is payable in cash when you inspect your items at pickup.
                           </p>
                         </div>
 
                         {/* Action Button */}
                         <div className="pt-1">
                           <button
-                            onClick={handleJoin}
+                            onClick={() => handleInitiatePayment(advanceDeposit, false)}
                             disabled={isSubmitting || paymentProcessing}
                             className="w-full py-3.5 px-6 rounded-2xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 disabled:opacity-75 disabled:hover:scale-100"
                           >
@@ -858,7 +1004,9 @@ export default function DealDetailPage() {
                             ) : isSubmitting ? (
                               'Reserving...'
                             ) : (
-                              `Pay 30% Deposit (PKR ${advanceDeposit.toLocaleString()}) & Reserve ${selectedQuantity} Unit(s)`
+                              `Pay 30% Deposit (PKR ${advanceDeposit.toLocaleString()}) via ${
+                                paymentMethod === 'CARD' ? 'Card' : 'Easypaisa Mobile Push'
+                              } & Reserve ${selectedQuantity} Unit(s)`
                             )}
                           </button>
                         </div>
@@ -886,7 +1034,7 @@ export default function DealDetailPage() {
             Everyone pays the price of the highest tier reached when the pool closes.
           </p>
         </div>
-        <TierTable tiers={deal.tiers} unitsClaimed={deal.unitsClaimed} unitLabel={deal.product.unit} />
+        <TierTable tiers={deal.tiers} unitsClaimed={deal.unitsClaimed} unitLabel={deal.product.unit} retailPrice={(deal as any).retailPrice || deal.basePrice} />
       </div>
 
       {/* Participant Roster Section */}
@@ -926,6 +1074,121 @@ export default function DealDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Simulated Mobile Push Prompt Approval Modal (Portfolio Showcase) */}
+      {showPhonePromptModal && phonePromptData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-slate-900 rounded-[40px] p-5 shadow-2xl border-4 border-slate-700/80 text-white animate-in zoom-in-95 duration-200 space-y-4">
+            {/* Phone Speaker & Dynamic Island */}
+            <div className="w-28 h-5 bg-black rounded-full mx-auto flex items-center justify-center gap-1.5 shadow-inner">
+              <div className="w-2 h-2 rounded-full bg-slate-800" />
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-950/60 border border-blue-900/40" />
+            </div>
+
+            {/* Phone Status Bar */}
+            <div className="flex items-center justify-between text-[11px] font-bold px-2 text-slate-300">
+              <span>09:41</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px]">5G</span>
+                <Wifi className="w-3.5 h-3.5" />
+                <Battery className="w-4 h-4 text-emerald-400" />
+              </div>
+            </div>
+
+            {/* Reviewer / Portfolio Showcase Banner */}
+            <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-400/30 text-amber-200 text-[11px] space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Portfolio Showcase: Telco Push Simulation</span>
+              </div>
+              <p className="text-[10.5px] leading-relaxed text-amber-200/90">
+                In production, this push notification appears on the buyer's physical mobile handset ({phonePromptData.phoneNumber}). SBP regulations protect customer MPINs from web interception.
+              </p>
+            </div>
+
+            {/* Incoming Telco / App Push Prompt Card */}
+            <div className="p-4 rounded-3xl bg-white text-slate-900 shadow-xl border border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-xs bg-gradient-to-br from-emerald-500 to-teal-600">
+                    EP
+                  </div>
+                  <div>
+                    <span className="font-black text-xs block leading-tight text-slate-900">
+                      Easypaisa Direct Debit
+                    </span>
+                    <span className="text-[10px] text-slate-400">Debit Authorization • now</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Escrow Rail
+                </span>
+              </div>
+
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Merchant</div>
+                <div className="text-xs font-black text-slate-900">WHOLLY WHOLESALE (PVT) LTD</div>
+                <div className="text-[11px] text-slate-600 font-medium">
+                  Order: {phonePromptData.units} unit(s) of {phonePromptData.productName}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
+                    {phonePromptData.isUpdate ? 'Additional 30% Deposit' : '30% Advance Deposit'}
+                  </span>
+                  <span className="text-xl font-black text-slate-900">
+                    PKR {phonePromptData.depositAmount.toLocaleString()}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200">
+                  100% Refundable
+                </span>
+              </div>
+
+              <div className="text-[10.5px] text-slate-500 font-medium flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Authorize on handset via MPIN / Biometric.</span>
+              </div>
+            </div>
+
+            {/* Interactive Simulation Controls */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                disabled={isPhoneSimulating}
+                onClick={handlePhoneApproval}
+                className="w-full py-3.5 px-4 rounded-2xl font-black text-xs text-white shadow-lg transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/30"
+              >
+                {isPhoneSimulating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Authorizing with Telco Network...</span>
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="w-4 h-4" />
+                    <span>Simulate Instant Phone Approval (PKR {phonePromptData.depositAmount.toLocaleString()})</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={isPhoneSimulating}
+                onClick={() => setShowPhonePromptModal(false)}
+                className="w-full py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors text-center"
+              >
+                Decline / Cancel on Phone
+              </button>
+            </div>
+
+            {/* Bottom Home Indicator */}
+            <div className="w-32 h-1 bg-slate-600 rounded-full mx-auto" />
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Pop-Up Modal */}
       {showConfirmModal && confirmDetails && (
@@ -967,7 +1230,7 @@ export default function DealDetailPage() {
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <span className="font-bold text-slate-700">Total Units Reserved:</span>
                 <span className="font-black text-emerald-800 text-sm">
-                  {confirmDetails.totalQuantity} {deal.product.unit}
+                  {formatReservedUnits(confirmDetails.totalQuantity, deal.product.unit)}
                   {confirmDetails.isUpdate && (
                     <span className="ml-1.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
                       +{confirmDetails.additionalUnits} added
@@ -1033,6 +1296,29 @@ export default function DealDetailPage() {
               />
             </div>
 
+            {/* Instant Pickup Pass Preview in Confirmation Modal */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-left">
+              <div>
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                  Your Pickup Pass Code
+                </span>
+                <span className="font-mono text-lg font-black text-emerald-950">
+                  {getPickupCode(confirmDetails.participationId || deal.userParticipation?.id)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setShowPassModal(true);
+                }}
+                className="px-3.5 py-2 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition-colors"
+              >
+                <QrCode className="w-4 h-4" />
+                View Full QR Pass
+              </button>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
               <Link
@@ -1051,6 +1337,52 @@ export default function DealDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Pickup Pass Modal */}
+      <PickupPassModal
+        isOpen={showPassModal}
+        onClose={() => setShowPassModal(false)}
+        pass={
+          deal?.userParticipation
+            ? {
+                pickupCode: getPickupCode(deal.userParticipation.id),
+                participationId: deal.userParticipation.id,
+                buyerName: session?.user?.name || undefined,
+                buyerPhone: session?.user?.phone || undefined,
+                productName: deal.product.name,
+                productImage: deal.product.imageUrl,
+                productCategory: deal.product.category,
+                units: formatReservedUnits(deal.userParticipation.quantity, deal.product.unit),
+                depositPaid: deal.userParticipation.depositPaid || 0,
+                paymentMethod: deal.userParticipation.paymentMethod,
+                balanceDue: Math.max(
+                  0,
+                  deal.currentPrice * deal.userParticipation.quantity - (deal.userParticipation.depositPaid || 0)
+                ),
+                pickupLocation: deal.pickupLocation,
+                pickupTime: deal.pickupTime,
+                status: deal.userParticipation.status,
+              }
+            : confirmDetails
+            ? {
+                pickupCode: getPickupCode(confirmDetails.participationId),
+                participationId: confirmDetails.participationId,
+                buyerName: session?.user?.name || undefined,
+                buyerPhone: session?.user?.phone || undefined,
+                productName: deal.product.name,
+                productImage: deal.product.imageUrl,
+                productCategory: deal.product.category,
+                units: formatReservedUnits(confirmDetails.totalQuantity, deal.product.unit),
+                depositPaid: confirmDetails.totalDepositPaid,
+                paymentMethod: confirmDetails.paymentMethod,
+                balanceDue: confirmDetails.balanceDue,
+                pickupLocation: deal.pickupLocation,
+                pickupTime: deal.pickupTime,
+                status: 'RESERVED',
+              }
+            : null
+        }
+      />
     </div>
   );
 }

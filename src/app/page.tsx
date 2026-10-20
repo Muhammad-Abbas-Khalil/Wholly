@@ -6,7 +6,6 @@ import {
   Users,
   Coins,
   ShieldCheck,
-  RefreshCw,
   ShoppingBag,
   ArrowRight,
   TrendingDown,
@@ -25,10 +24,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [cityFilter, setCityFilter] = useState('ALL');
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchDeals = async (showRefreshIndicator = false) => {
-    if (showRefreshIndicator) setIsRefreshing(true);
+  const fetchDeals = async () => {
     try {
       const res = await fetch('/api/deals');
       if (res.ok) {
@@ -39,7 +36,6 @@ export default function HomePage() {
       console.error('Failed to load deals:', err);
     } finally {
       setLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -48,7 +44,7 @@ export default function HomePage() {
 
     // 10-second polling for live updates
     const pollInterval = setInterval(() => {
-      fetchDeals(false);
+      fetchDeals();
     }, 10000);
 
     return () => clearInterval(pollInterval);
@@ -62,6 +58,8 @@ export default function HomePage() {
     'Rice & Grains',
     'Tea & Beverages',
     'Sugar & Sweeteners',
+    'Spices & Recipe Mixes',
+    'Pulses & Lentils',
   ];
 
   const cities = ['ALL', 'Lahore', 'Karachi', 'Islamabad', 'Peshawar'];
@@ -126,7 +124,7 @@ export default function HomePage() {
             </span>
             <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
               <CreditCard className="w-4 h-4 text-amber-300" />
-              30% Advance (JazzCash / Easypaisa / Card)
+              30% Advance (Easypaisa / Card)
             </span>
             <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
               <Coins className="w-4 h-4 text-teal-300" />
@@ -134,7 +132,7 @@ export default function HomePage() {
             </span>
             <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
               <ShieldCheck className="w-4 h-4 text-emerald-300" />
-              100% Genuine Direct-from-Miller
+              100% Deposit Refund If Deal Locked
             </span>
             <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-colors">
               <Sparkles className="w-4 h-4 text-amber-300" />
@@ -267,8 +265,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Row 2: Category Filter & Live Polling Status */}
-          <div className="pt-3 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Row 2: Category Filter */}
+          <div className="pt-3 border-t border-slate-100">
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                 Filter by Staple Category:
@@ -289,21 +287,22 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 shrink-0 self-start md:self-end pt-1">
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live Hub Sync
+        {/* All Products & Active Pools Header */}
+        <div className="flex items-center justify-between pt-1">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
+              <span>All Products</span>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                {filteredDeals.length} {filteredDeals.length === 1 ? 'Pool' : 'Pools'} Active
               </span>
-              <button
-                onClick={() => fetchDeals(true)}
-                disabled={isRefreshing}
-                className="p-1 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
-                title="Refresh live prices"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
-              </button>
-            </div>
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              {cityFilter === 'ALL' ? 'All active locations across Pakistan' : `Showing deals for ${cityFilter}`}
+              {categoryFilter !== 'ALL' ? ` • Category: ${categoryFilter}` : ''}
+            </p>
           </div>
         </div>
 
@@ -359,7 +358,7 @@ export default function HomePage() {
               </div>
               <h3 className="font-bold text-gray-900 text-base">Order Any Quantity (No Limits)</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Choose any quantity your household or business requires with zero unit limits. Lock in with a 30% advance deposit via JazzCash, Easypaisa, or Card.
+                Choose any quantity your household requires with zero unit limits. Lock in with a 30% advance deposit via Easypaisa or Card — <strong>100% automatically refunded if the deal does not unlock</strong>.
               </p>
             </div>
 

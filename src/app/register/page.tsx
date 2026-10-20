@@ -174,7 +174,7 @@ export default function RegisterPage() {
               Transparent Wholly Guarantee
             </div>
             <p className="text-emerald-700 leading-relaxed font-medium">
-              30% advance deposit secures bulk factory inventory via JazzCash, Easypaisa, or Card. Remaining 70% is payable in cash upon in-person collection at pickup.
+              30% advance deposit secures bulk factory inventory via Easypaisa or Card. Remaining 70% is payable in cash upon in-person collection at pickup.
             </p>
           </div>
 

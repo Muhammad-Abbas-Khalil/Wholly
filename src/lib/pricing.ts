@@ -64,25 +64,55 @@ export function calculateDealProgress<T extends TierLike>(tiers: T[], units: num
 }
 
 /**
- * Computes savings compared to the base tier (first tier).
+ * Checks whether the minimum volume threshold has been crossed to activate the deal.
+ */
+export function isDealUnlocked<T extends TierLike>(tiers: T[], units: number): boolean {
+  return currentTier(tiers, units) !== null;
+}
+
+/**
+ * Computes savings compared to the retail/benchmark price or base tier.
  */
 export function calculateSavings<T extends TierLike>(
   tiers: T[],
-  activeTier: T | null
+  activeTier: T | null,
+  retailPrice?: number | null
 ): { savingsPerUnit: number; percentage: number } {
   if (!tiers.length || !activeTier) {
     return { savingsPerUnit: 0, percentage: 0 };
   }
 
-  // Base tier is the tier with the lowest minUnits (usually standard retail/starter tier)
+  // Use explicit retail price if provided; otherwise fallback to the lowest minUnits tier
   const sortedByMin = [...tiers].sort((a, b) => a.minUnits - b.minUnits);
-  const baseTier = sortedByMin[0];
+  const benchmarkPrice = retailPrice && retailPrice > 0 ? retailPrice : sortedByMin[0].pricePerUnit;
 
-  const savingsPerUnit = Math.max(0, baseTier.pricePerUnit - activeTier.pricePerUnit);
+  const savingsPerUnit = Math.max(0, benchmarkPrice - activeTier.pricePerUnit);
   const percentage =
-    baseTier.pricePerUnit > 0 ? Math.round((savingsPerUnit / baseTier.pricePerUnit) * 100) : 0;
+    benchmarkPrice > 0 ? Math.round((savingsPerUnit / benchmarkPrice) * 100) : 0;
 
   return { savingsPerUnit, percentage };
+}
+
+/**
+ * Computes potential savings of the minimum unlock tier compared to retail price (for locked preview).
+ */
+export function calculateTargetSavings<T extends TierLike>(
+  tiers: T[],
+  retailPrice?: number | null
+): { targetPrice: number; savingsPerUnit: number; percentage: number } {
+  if (!tiers.length) {
+    return { targetPrice: 0, savingsPerUnit: 0, percentage: 0 };
+  }
+  const sorted = [...tiers].sort((a, b) => a.minUnits - b.minUnits);
+  const firstTier = sorted[0];
+  const benchmark = retailPrice && retailPrice > 0 ? retailPrice : firstTier.pricePerUnit;
+  const savingsPerUnit = Math.max(0, benchmark - firstTier.pricePerUnit);
+  const percentage = benchmark > 0 ? Math.round((savingsPerUnit / benchmark) * 100) : 0;
+  return {
+    targetPrice: firstTier.pricePerUnit,
+    savingsPerUnit,
+    percentage,
+  };
 }
 
 /**
@@ -117,4 +147,29 @@ export function calculateBalanceDue(
   const total = unitPrice * quantity;
   return Math.max(0, total - depositPaid);
 }
+
+/**
+ * Formats reserved units and product unit/pack size with a clear comma separator.
+ * E.g., quantity: 6, unit: "10 kg" or "10kg" -> "6, 10kg"
+ * E.g., quantity: 6, unit: "10 kg bag" -> "6, 10kg bag"
+ * E.g., quantity: 3, unit: "5 L tin" -> "3, 5L tin"
+ */
+export function formatReservedUnits(quantity: number, unit?: string | null): string {
+  if (!unit || !unit.trim()) return `${quantity} units`;
+  const cleanUnit = unit.trim().replace(/^,\s*/, '');
+  const normalizedUnit = cleanUnit.replace(/(\d+)\s+(kg|g|L|ml)\b/gi, '$1$2');
+  return `${quantity}, ${normalizedUnit}`;
+}
+
+/**
+ * Generates a clean, consistent, 6-character alphanumeric pickup verification code.
+ * E.g., 'cmvf5lgpw000vs8x1n477cw5g' -> 'WH-77CW5G'
+ */
+export function getPickupCode(participationId?: string | null): string {
+  if (!participationId) return 'WH-000000';
+  const clean = participationId.replace(/[^a-zA-Z0-9]/g, '');
+  const suffix = clean.slice(-6).toUpperCase();
+  return `WH-${suffix.padStart(6, '0')}`;
+}
+
 

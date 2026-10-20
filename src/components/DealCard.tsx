@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProgressBar from '@/components/ProgressBar';
-import { MapPin, Clock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, CheckCircle2, AlertCircle, Lock, Unlock, ShieldCheck } from 'lucide-react';
 
 interface DealCardProps {
   deal: {
@@ -27,6 +27,8 @@ interface DealCardProps {
     basePrice: number;
     savings: { savingsPerUnit: number; percentage: number };
     progress: number;
+    minUnitsRequired?: number;
+    isUnlocked?: boolean;
   };
 }
 
@@ -56,22 +58,31 @@ export default function DealCard({ deal }: DealCardProps) {
     return () => clearInterval(interval);
   }, [deal.deadline]);
 
+  const minRequired = deal.minUnitsRequired ?? deal.tiers[0]?.minUnits ?? 1;
+  const isUnlocked = deal.isUnlocked !== undefined ? deal.isUnlocked : deal.unitsClaimed >= minRequired;
+  const unitsNeeded = Math.max(0, minRequired - deal.unitsClaimed);
+
   const statusConfig = {
-    OPEN: {
-      label: 'Open Pool',
-      className: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    },
+    OPEN: isUnlocked
+      ? {
+          label: '🔓 Unlocked',
+          className: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold',
+        }
+      : {
+          label: `🔒 Locked (${unitsNeeded} to activate)`,
+          className: 'bg-amber-50 text-amber-900 border-amber-300 font-bold',
+        },
     UNLOCKED: {
       label: 'Goal Met / Unlocked',
-      className: 'bg-teal-50 text-teal-800 border-teal-200',
+      className: 'bg-teal-50 text-teal-800 border-teal-200 font-bold',
     },
     FULFILLED: {
       label: 'Fulfilled',
-      className: 'bg-blue-50 text-blue-800 border-blue-200',
+      className: 'bg-blue-50 text-blue-800 border-blue-200 font-bold',
     },
     FAILED: {
       label: 'Missed Threshold',
-      className: 'bg-gray-100 text-gray-700 border-gray-300',
+      className: 'bg-gray-100 text-gray-700 border-gray-300 font-bold',
     },
   };
 
@@ -80,23 +91,22 @@ export default function DealCard({ deal }: DealCardProps) {
   return (
     <div className="group flex flex-col bg-white rounded-3xl border border-gray-200/80 shadow-xs hover:shadow-xl hover:border-emerald-200 transition-all duration-300 overflow-hidden">
       {/* Product Image & Badges */}
-      <div className="relative h-52 w-full overflow-hidden bg-gray-100">
+      <div className="relative h-56 w-full overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100/70 p-4 flex items-center justify-center border-b border-gray-100">
         <img
           src={deal.product.imageUrl}
           alt={deal.product.name}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-contain object-center group-hover:scale-108 transition-transform duration-500 drop-shadow-xs"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
         {/* Top Badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/95 backdrop-blur-md text-gray-800 shadow-xs">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
+          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/95 backdrop-blur-md text-gray-800 shadow-xs border border-gray-100">
             {deal.product.category}
           </span>
 
           <span
-            className={`px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md ${statusInfo.className}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md shadow-xs ${statusInfo.className}`}
           >
             {statusInfo.label}
           </span>
@@ -104,7 +114,7 @@ export default function DealCard({ deal }: DealCardProps) {
 
         {/* Countdown Badge on Image bottom */}
         {deal.status === 'OPEN' && (
-          <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5">
+          <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
             {timeLeft || 'Ending soon'}
           </div>
@@ -124,20 +134,40 @@ export default function DealCard({ deal }: DealCardProps) {
           </p>
 
           {/* Pricing Highlight */}
-          <div className="mt-3.5 flex items-baseline gap-2.5">
-            <span className="text-2xl font-black text-gray-900">
-              PKR {deal.currentPrice.toLocaleString()}
-            </span>
+          <div className="mt-3.5 space-y-1">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-2xl font-black text-gray-900">
+                PKR {deal.currentPrice.toLocaleString()}
+              </span>
 
-            {deal.savings.savingsPerUnit > 0 && (
-              <>
+              {deal.basePrice > deal.currentPrice && (
                 <span className="text-sm font-semibold text-gray-400 line-through">
                   PKR {deal.basePrice.toLocaleString()}
                 </span>
+              )}
+
+              {deal.savings.savingsPerUnit > 0 ? (
                 <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                   Save {deal.savings.percentage}%
                 </span>
-              </>
+              ) : (
+                <span className="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-amber-600" />
+                  Target Wholesale
+                </span>
+              )}
+            </div>
+
+            {!isUnlocked && deal.status === 'OPEN' && (
+              <div className="space-y-0.5 pt-0.5">
+                <p className="text-[11px] text-amber-700 font-bold flex items-center gap-1">
+                  <span>🔒 Needs {unitsNeeded} more units to activate</span>
+                </p>
+                <p className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>30% advance is 100% refunded if not unlocked</span>
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -156,9 +186,17 @@ export default function DealCard({ deal }: DealCardProps) {
         {/* CTA Button */}
         <Link
           href={`/deals/${deal.id}`}
-          className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-bold text-sm bg-gray-900 hover:bg-emerald-600 text-white shadow-xs group-hover:shadow-md group-hover:shadow-emerald-600/20 transition-all duration-200"
+          className={`w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-bold text-sm shadow-xs group-hover:shadow-md transition-all duration-200 ${
+            !isUnlocked && deal.status === 'OPEN'
+              ? 'bg-amber-600 hover:bg-amber-700 text-white group-hover:shadow-amber-600/20'
+              : 'bg-gray-900 hover:bg-emerald-600 text-white group-hover:shadow-emerald-600/20'
+          }`}
         >
-          {deal.status === 'OPEN' ? 'Join Deal & Pool Order' : 'View Deal Details'}
+          {deal.status === 'OPEN'
+            ? isUnlocked
+              ? 'Join Deal & Pool Order'
+              : `Join & Help Unlock (${unitsNeeded} needed)`
+            : 'View Deal Details'}
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>

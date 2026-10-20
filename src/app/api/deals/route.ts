@@ -59,10 +59,15 @@ export async function GET(request: Request) {
       const upcomingTier = nextTier(deal.tiers, units);
       const neededUnits = unitsToNextTier(deal.tiers, units);
       const progress = calculateDealProgress(deal.tiers, units);
-      const savings = calculateSavings(deal.tiers, activeTier);
 
-      const basePrice = deal.tiers[0]?.pricePerUnit ?? 0;
-      const currentPrice = activeTier ? activeTier.pricePerUnit : basePrice;
+      const retailPrice = deal.retailPrice || (deal.product as any).retailPrice || (deal.tiers[0]?.pricePerUnit ? Math.round(deal.tiers[0].pricePerUnit * 1.1) : 0);
+      const savings = calculateSavings(deal.tiers, activeTier, retailPrice);
+
+      const minUnitsRequired = deal.tiers[0]?.minUnits ?? 1;
+      const isUnlocked = activeTier !== null;
+
+      const basePrice = retailPrice || (deal.tiers[0]?.pricePerUnit ?? 0);
+      const currentPrice = activeTier ? activeTier.pricePerUnit : (deal.tiers[0]?.pricePerUnit ?? basePrice);
 
       return {
         id: deal.id,
@@ -79,6 +84,9 @@ export async function GET(request: Request) {
         currentTier: activeTier,
         nextTier: upcomingTier,
         unitsToNextTier: neededUnits,
+        minUnitsRequired,
+        isUnlocked,
+        retailPrice,
         currentPrice,
         basePrice,
         savings,
@@ -108,6 +116,7 @@ export async function POST(request: Request) {
       pickupTime,
       maxPerUser = 50,
       tokenPerUnit = 150,
+      retailPrice,
       tiers,
     } = body;
 
@@ -123,6 +132,7 @@ export async function POST(request: Request) {
         pickupTime,
         maxPerUser: Number(maxPerUser) || 50,
         tokenPerUnit: Number(tokenPerUnit) || 150,
+        retailPrice: retailPrice ? Number(retailPrice) : null,
         createdById: session.user.id,
         tiers: {
           create: tiers.map((t: { minUnits: number; pricePerUnit: number; supplierCostPerUnit: number }) => ({

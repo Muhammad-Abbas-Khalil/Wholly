@@ -14,13 +14,14 @@ interface TierTableProps {
   tiers: TierData[];
   unitsClaimed: number;
   unitLabel?: string;
+  retailPrice?: number | null;
 }
 
-export default function TierTable({ tiers, unitsClaimed, unitLabel = 'units' }: TierTableProps) {
+export default function TierTable({ tiers, unitsClaimed, unitLabel = 'units', retailPrice }: TierTableProps) {
   if (!tiers || tiers.length === 0) return null;
 
   const sortedTiers = [...tiers].sort((a, b) => a.minUnits - b.minUnits);
-  const basePrice = sortedTiers[0].pricePerUnit;
+  const benchmarkPrice = retailPrice && retailPrice > 0 ? retailPrice : sortedTiers[0].pricePerUnit;
 
   // Find active tier
   const activeTiers = sortedTiers.filter((t) => unitsClaimed >= t.minUnits);
@@ -46,8 +47,8 @@ export default function TierTable({ tiers, unitsClaimed, unitLabel = 'units' }: 
             const isNext = nextTarget?.minUnits === tier.minUnits;
             const isUnlocked = unitsClaimed >= tier.minUnits;
 
-            const savings = Math.max(0, basePrice - tier.pricePerUnit);
-            const savingsPercent = basePrice > 0 ? Math.round((savings / basePrice) * 100) : 0;
+            const savings = Math.max(0, benchmarkPrice - tier.pricePerUnit);
+            const savingsPercent = benchmarkPrice > 0 ? Math.round((savings / benchmarkPrice) * 100) : 0;
 
             const nextTierObj = sortedTiers[idx + 1];
             const rangeLabel = nextTierObj
@@ -80,7 +81,7 @@ export default function TierTable({ tiers, unitsClaimed, unitLabel = 'units' }: 
                       Save {savingsPercent}% (-PKR {savings.toLocaleString()})
                     </span>
                   ) : (
-                    <span className="text-gray-400 text-xs">Base price</span>
+                    <span className="text-gray-400 text-xs">Standard price</span>
                   )}
                 </td>
                 <td className="py-3.5 px-4 text-right">
@@ -89,13 +90,13 @@ export default function TierTable({ tiers, unitsClaimed, unitLabel = 'units' }: 
                       Active Tier
                     </span>
                   ) : isNext ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                      <ArrowRight className="w-3 h-3" /> Next Goal ({tier.minUnits - unitsClaimed} left)
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      <ArrowRight className="w-3 h-3" /> {tier.minUnits - unitsClaimed} left to unlock
                     </span>
                   ) : isUnlocked ? (
                     <span className="text-emerald-700 text-xs font-semibold">Unlocked</span>
                   ) : (
-                    <span className="text-gray-400 text-xs">Locked</span>
+                    <span className="text-gray-400 text-xs">🔒 Locked</span>
                   )}
                 </td>
               </tr>

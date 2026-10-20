@@ -30,7 +30,10 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  QrCode,
+  X,
 } from 'lucide-react';
+import { formatReservedUnits, getPickupCode } from '@/lib/pricing';
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
@@ -41,6 +44,10 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'FULFILLED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedDealId, setExpandedDealId] = useState<string | null>(null);
+
+  // Counter scanner & verification modal
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [verifySearchInput, setVerifySearchInput] = useState('');
 
   // Modals & form state
   const [isCreatingDeal, setIsCreatingDeal] = useState(false);
@@ -57,8 +64,8 @@ export default function AdminDashboardPage() {
     pickupTime: 'Saturday 4:00 PM - 7:00 PM',
     maxPerUser: 50,
     tokenPerUnit: 150,
+    retailPrice: 3000,
     tiers: [
-      { minUnits: 1, pricePerUnit: 3000, supplierCostPerUnit: 2600 },
       { minUnits: 10, pricePerUnit: 2850, supplierCostPerUnit: 2550 },
       { minUnits: 20, pricePerUnit: 2700, supplierCostPerUnit: 2500 },
     ],
@@ -105,6 +112,17 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   }, [session, status]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('verify') || params.get('code');
+      if (code) {
+        setVerifySearchInput(code);
+        setIsVerifyModalOpen(true);
+      }
+    }
+  }, []);
 
   const handleRunCron = async () => {
     setIsCronRunning(true);
@@ -262,6 +280,7 @@ export default function AdminDashboardPage() {
             productUnit: deal.product?.unit || 'unit',
             unitPrice: deal.currentPrice || 0,
             participationId: p.id,
+            pickupCode: getPickupCode(p.id),
             buyerId: p.userId,
             buyerName: p.user?.name || 'Anonymous Buyer',
             buyerPhone: p.user?.phone || 'No phone',
@@ -296,7 +315,8 @@ export default function AdminDashboardPage() {
       const matchParticipant = deal.participations?.some(
         (p: any) =>
           p.user?.name?.toLowerCase().includes(q) ||
-          p.user?.phone?.toLowerCase().includes(q)
+          p.user?.phone?.toLowerCase().includes(q) ||
+          getPickupCode(p.id).toLowerCase().includes(q)
       );
 
       return matchProduct || matchCategory || matchParticipant;
@@ -309,12 +329,28 @@ export default function AdminDashboardPage() {
     const q = searchQuery.toLowerCase();
     return allMasterOrders.filter(
       (o) =>
+        o.pickupCode.toLowerCase().includes(q) ||
         o.buyerName.toLowerCase().includes(q) ||
         o.buyerPhone.toLowerCase().includes(q) ||
         o.productName.toLowerCase().includes(q) ||
         o.status.toLowerCase().includes(q)
     );
   }, [allMasterOrders, searchQuery]);
+
+  // Active matched order for counter scanner
+  const matchedOrder = useMemo(() => {
+    if (!verifySearchInput.trim()) return null;
+    const q = verifySearchInput.trim().toLowerCase();
+    return (
+      allMasterOrders.find(
+        (o) =>
+          o.pickupCode.toLowerCase() === q ||
+          o.pickupCode.replace('-', '').toLowerCase() === q.replace('-', '') ||
+          o.buyerPhone.replace(/[^0-9]/g, '').includes(q.replace(/[^0-9]/g, '')) ||
+          o.buyerName.toLowerCase().includes(q)
+      ) ?? null
+    );
+  }, [allMasterOrders, verifySearchInput]);
 
   if (status === 'loading' || loading) {
     return (
@@ -383,6 +419,14 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
+              onClick={() => setIsVerifyModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02]"
+            >
+              <QrCode className="w-4 h-4" />
+              Verify Pickup Pass
+            </button>
+
+            <button
               onClick={() => setIsCreatingDeal(true)}
               className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 transition-all hover:scale-[1.02]"
             >
@@ -433,7 +477,7 @@ export default function AdminDashboardPage() {
           <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
             <span className="text-[11px] text-purple-200 font-semibold block">30% Deposits Paid</span>
             <span className="text-xl font-black text-emerald-400 mt-0.5 block">PKR {stats.totalDepositsPaid.toLocaleString()}</span>
-            <span className="text-[10px] text-emerald-300 mt-1 block">In JazzCash / Card</span>
+            <span className="text-[10px] text-emerald-300 mt-1 block">In Easypaisa / Card</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
@@ -568,7 +612,7 @@ export default function AdminDashboardPage() {
                           <img
                             src={deal.product?.imageUrl}
                             alt={deal.product?.name}
-                            className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-slate-200"
+                            className="w-20 h-20 rounded-2xl object-contain p-1.5 bg-white shrink-0 border border-slate-200"
                           />
                           <div className="space-y-1.5">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -660,7 +704,7 @@ export default function AdminDashboardPage() {
                         <div className="p-2.5 rounded-xl bg-white border border-slate-200">
                           <span className="text-[10px] text-slate-500 font-bold block">Units Reserved</span>
                           <span className="text-sm font-black text-emerald-700 mt-0.5 block">
-                            {deal.unitsClaimed} {deal.product?.unit} ({activeParticipants.length} buyers)
+                            {formatReservedUnits(deal.unitsClaimed, deal.product?.unit)} ({activeParticipants.length} buyers)
                           </span>
                         </div>
 
@@ -753,12 +797,16 @@ export default function AdminDashboardPage() {
                                           <a href={`tel:${p.user?.phone}`} className="hover:text-purple-700 hover:underline">
                                             {p.user?.phone}
                                           </a>
+                                          <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded inline-flex items-center gap-1 border border-slate-200">
+                                            <QrCode className="w-2.5 h-2.5 text-emerald-700" />
+                                            {getPickupCode(p.id)}
+                                          </span>
                                         </div>
                                       </td>
 
                                       {/* Units */}
                                       <td className="py-3.5 px-4 font-black text-slate-900">
-                                        {p.quantity} {deal.product?.unit}
+                                        {formatReservedUnits(p.quantity, deal.product?.unit)}
                                         <span className="block text-[10px] text-slate-500 font-normal">
                                           Total: PKR {totalVal.toLocaleString()}
                                         </span>
@@ -923,6 +971,10 @@ export default function AdminDashboardPage() {
                               {order.buyerPhone}
                             </a>
                           </span>
+                          <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded inline-flex items-center gap-1 mt-0.5 border border-slate-200">
+                            <QrCode className="w-2.5 h-2.5 text-emerald-700" />
+                            {order.pickupCode}
+                          </span>
                         </td>
 
                         <td className="py-3.5 px-4">
@@ -940,7 +992,7 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="py-3.5 px-4 font-black text-slate-900">
-                          {order.quantity} {order.productUnit}
+                          {formatReservedUnits(order.quantity, order.productUnit)}
                         </td>
 
                         <td className="py-3.5 px-4">
@@ -1208,6 +1260,143 @@ export default function AdminDashboardPage() {
                 Save Product
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VERIFY PICKUP PASS (COUNTER SCANNER) */}
+      {isVerifyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-left relative space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setIsVerifyModalOpen(false);
+                setVerifySearchInput('');
+              }}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 leading-tight">Hub Counter Pickup Scanner</h3>
+                <p className="text-xs text-slate-500">Scan QR Code or enter 6-character Pickup Code / Phone</p>
+              </div>
+            </div>
+
+            {/* Input search */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Enter or Scan Code:</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  autoFocus
+                  value={verifySearchInput}
+                  onChange={(e) => setVerifySearchInput(e.target.value)}
+                  placeholder="e.g. WH-77CW5G or 0321..."
+                  className="w-full p-3.5 pl-11 rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/20 text-slate-900 font-mono text-sm uppercase tracking-wider outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs"
+                />
+                <Search className="w-5 h-5 text-emerald-600 absolute left-3.5 top-3.5" />
+                {verifySearchInput && (
+                  <button
+                    onClick={() => setVerifySearchInput('')}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 rounded-full w-5 h-5 flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Matched Result */}
+            {matchedOrder ? (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Verified Match
+                    </span>
+                    <h4 className="text-base font-black text-slate-900 mt-1">{matchedOrder.buyerName}</h4>
+                    <span className="text-xs text-slate-500 font-mono">{matchedOrder.buyerPhone}</span>
+                  </div>
+
+                  <span className="font-mono text-sm font-black text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                    {matchedOrder.pickupCode}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-xs space-y-2">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <span className="text-slate-600 font-medium">Staple Product:</span>
+                    <span className="font-bold text-slate-900">{matchedOrder.productName}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <span className="text-slate-600 font-medium">Order Quantity:</span>
+                    <span className="font-black text-emerald-800 text-sm">
+                      {formatReservedUnits(matchedOrder.quantity, matchedOrder.productUnit)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <span className="text-slate-600 font-medium">30% Advance Secured:</span>
+                    <span className="font-bold text-emerald-700">
+                      PKR {matchedOrder.depositPaid.toLocaleString()}{' '}
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        ({matchedOrder.paymentMethod === 'CARD' ? 'Card' : matchedOrder.paymentMethod || 'JazzCash'})
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5 text-amber-950 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                    <span className="font-bold flex items-center gap-1">
+                      <Coins className="w-4 h-4 text-amber-600" />
+                      Remaining Cash Due:
+                    </span>
+                    <span className="font-black text-base">
+                      PKR {matchedOrder.cashDue.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Handover Action */}
+                {matchedOrder.status === 'COLLECTED' ? (
+                  <div className="p-3 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-bold text-center flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                    Order already collected & completed!
+                  </div>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      await handleUpdateParticipant(matchedOrder.dealId, matchedOrder.participationId, 'COLLECTED');
+                    }}
+                    disabled={actionLoadingId === `part-${matchedOrder.participationId}`}
+                    className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" />
+                    {actionLoadingId === `part-${matchedOrder.participationId}`
+                      ? 'Confirming...'
+                      : `Collect PKR ${matchedOrder.cashDue.toLocaleString()} in Cash & Hand Over`}
+                  </button>
+                )}
+              </div>
+            ) : verifySearchInput.trim() ? (
+              <div className="p-6 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-500">
+                No active reservation found matching &quot;{verifySearchInput}&quot;. Please verify the pickup code or phone number.
+              </div>
+            ) : (
+              <div className="p-4 text-center rounded-2xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 space-y-1">
+                <p className="font-bold">Scan customer QR or enter code</p>
+                <p className="text-[11px] text-emerald-600">
+                  Tip: USB barcode scanners and phone camera scan URLs will automatically populate this box.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

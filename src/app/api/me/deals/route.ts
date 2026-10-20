@@ -33,8 +33,8 @@ export async function GET() {
     const userDeals = participations.map((p) => {
       const allUnits = totalUnits(p.deal.participations);
       const activeTier = currentTier(p.deal.tiers, allUnits);
-      const basePrice = p.deal.tiers[0]?.pricePerUnit ?? 0;
-      const unitPrice = activeTier ? activeTier.pricePerUnit : basePrice;
+      const basePrice = (p.deal as any).retailPrice || (p.deal.product as any).retailPrice || (p.deal.tiers[0]?.pricePerUnit ?? 0);
+      const unitPrice = activeTier ? activeTier.pricePerUnit : (p.deal.tiers[0]?.pricePerUnit ?? basePrice);
       const totalCost = unitPrice * p.quantity;
       const depositPaid = p.depositPaid || 0;
       const balanceDue = Math.max(0, totalCost - depositPaid);

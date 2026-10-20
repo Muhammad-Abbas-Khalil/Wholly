@@ -47,6 +47,7 @@ model Product {
   imageUrl    String
   unit        String   // e.g., "5 L can", "10 kg bag", "pack of 12"
   category    String   // e.g., "Cooking Oil", "Flour & Grains", "Tea & Sugar"
+  retailPrice Float?   // Standard market retail price (PKR)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deals       Deal[]
@@ -60,6 +61,7 @@ model Deal {
   deadline       DateTime
   maxPerUser     Int             @default(50)
   tokenPerUnit   Float           @default(150) // PKR commitment token per unit to prevent spam & no-shows
+  retailPrice    Float?          // Market retail reference price (PKR)
   pickupLocation String
   pickupTime     String          // e.g. "Sunday 4:00 PM - 7:00 PM"
   createdById    String

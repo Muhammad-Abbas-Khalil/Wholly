@@ -6,9 +6,13 @@ import {
   unitsToNextTier,
   calculateDealProgress,
   calculateSavings,
+  calculateTargetSavings,
+  isDealUnlocked,
   calculatePlatformMargin,
   calculateAdvanceDeposit,
   calculateBalanceDue,
+  formatReservedUnits,
+  getPickupCode,
   type TierLike,
   type ParticipationLike,
 } from '../src/lib/pricing';
@@ -120,6 +124,47 @@ describe('Wholly Pricing Engine', () => {
       expect(savings.savingsPerUnit).toBe(300);
       expect(savings.percentage).toBe(10);
     });
+
+    it('calculates savings against explicit retail price for threshold locked tiers', () => {
+      const wholesaleTiers: TierLike[] = [
+        { minUnits: 10, pricePerUnit: 2850, supplierCostPerUnit: 2550 },
+        { minUnits: 20, pricePerUnit: 2700, supplierCostPerUnit: 2500 },
+      ];
+      // When locked (< 10 units)
+      const lockedTier = currentTier(wholesaleTiers, 6);
+      expect(lockedTier).toBeNull();
+      const lockedSavings = calculateSavings(wholesaleTiers, lockedTier, 3000);
+      expect(lockedSavings.savingsPerUnit).toBe(0);
+
+      // When unlocked at tier 1 (10 units)
+      const unlockedTier = currentTier(wholesaleTiers, 12);
+      const tier1Savings = calculateSavings(wholesaleTiers, unlockedTier, 3000);
+      expect(tier1Savings.savingsPerUnit).toBe(150);
+      expect(tier1Savings.percentage).toBe(5);
+
+      // Target preview savings
+      const target = calculateTargetSavings(wholesaleTiers, 3000);
+      expect(target.targetPrice).toBe(2850);
+      expect(target.savingsPerUnit).toBe(150);
+      expect(target.percentage).toBe(5);
+    });
+  });
+
+  describe('isDealUnlocked()', () => {
+    const wholesaleTiers: TierLike[] = [
+      { minUnits: 10, pricePerUnit: 2850, supplierCostPerUnit: 2550 },
+      { minUnits: 20, pricePerUnit: 2700, supplierCostPerUnit: 2500 },
+    ];
+
+    it('returns false when units are below the minimum threshold', () => {
+      expect(isDealUnlocked(wholesaleTiers, 0)).toBe(false);
+      expect(isDealUnlocked(wholesaleTiers, 9)).toBe(false);
+    });
+
+    it('returns true once minimum threshold is reached', () => {
+      expect(isDealUnlocked(wholesaleTiers, 10)).toBe(true);
+      expect(isDealUnlocked(wholesaleTiers, 25)).toBe(true);
+    });
   });
 
   describe('calculatePlatformMargin()', () => {
@@ -142,6 +187,37 @@ describe('Wholly Pricing Engine', () => {
       expect(calculateBalanceDue(2700, 5, 4050)).toBe(9450);
       // If no deposit paid yet
       expect(calculateBalanceDue(2700, 5, 0)).toBe(13500);
+    });
+  });
+
+  describe('formatReservedUnits()', () => {
+    it('formats quantity and metric unit with comma separator and compact notation', () => {
+      expect(formatReservedUnits(6, '10 kg')).toBe('6, 10kg');
+      expect(formatReservedUnits(6, '10kg')).toBe('6, 10kg');
+      expect(formatReservedUnits(6, '10 kg bag')).toBe('6, 10kg bag');
+      expect(formatReservedUnits(3, '5 L tin')).toBe('3, 5L tin');
+      expect(formatReservedUnits(2, 'Carton (12 x 1L)')).toBe('2, Carton (12 x 1L)');
+      expect(formatReservedUnits(4, 'Pack of 12')).toBe('4, Pack of 12');
+    });
+
+    it('handles empty or missing unit gracefully', () => {
+      expect(formatReservedUnits(6, null)).toBe('6 units');
+      expect(formatReservedUnits(6, '')).toBe('6 units');
+      expect(formatReservedUnits(6, '   ')).toBe('6 units');
+    });
+  });
+
+  describe('getPickupCode()', () => {
+    it('generates consistent 6-character WH- prefixed pickup codes', () => {
+      expect(getPickupCode('cmvf5lgpw000vs8x1n477cw5g')).toBe('WH-77CW5G');
+      expect(getPickupCode('cmvf5ld9n000js8x1ttqu7p84')).toBe('WH-QU7P84');
+      expect(getPickupCode('abc-123')).toBe('WH-ABC123');
+    });
+
+    it('handles null, empty, or short strings safely', () => {
+      expect(getPickupCode(null)).toBe('WH-000000');
+      expect(getPickupCode('')).toBe('WH-000000');
+      expect(getPickupCode('A1')).toBe('WH-0000A1');
     });
   });
 });
